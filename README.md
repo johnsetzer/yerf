@@ -136,6 +136,7 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
 
     node file_server.js
     Open http://localhost:3000/perfed_site/perfed_site.html
+    Open your browser console and run 'yerf().render();'
 
 #Run tests
 
