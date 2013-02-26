@@ -1,0 +1,86 @@
+.sample {
+  position: relative;
+  border: 1px solid black;
+}
+
+.title{
+  position: relative;
+  line-height: 25px;
+  text-align: center;
+  border: 1px solid black;
+  height: 25px;
+}
+
+.level0 {
+  background: #1E9600;
+}
+
+.level1 {
+  background: #35B814;
+}
+
+.level2 {
+  background: #53D433;
+}
+
+.level3 {
+  background: #77E85A;
+}
+
+.level4 {
+  background: #A0FC88;
+}
+
+.level-expanded {
+  background: #E5F716;
+}
+
+.back-level0 {
+  background: #707070;
+}
+
+.back-level1 {
+  background: #969696;
+}
+
+.back-level2 {
+  background: #B8B8B8;
+}
+
+.back-level3 {
+  background: #E8E8E8;
+}
+
+.back-level4 {
+  background: #FAFAFA;
+}
+
+.browser {
+  background: #DAEEF2;
+  border: 1px solid black;
+}
+
+.browser div.browser-title {
+  background: #00BEE8;
+  border: 1px solid black;
+}
+
+#yerf-waterfall {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  z-index: 1000;
+  margin: 0px;
+}
+
+#yerf-waterfall .button{
+  background: #E8FA1E;
+  position: static;
+  line-height: 75px;
+  text-align: center;
+  border: 1px solid black;
+  height: 75px;
+  width: 300px;
+  display: inline;
+  padding: 25px;
+}

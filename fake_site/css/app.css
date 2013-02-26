@@ -1,0 +1,52 @@
+header {
+  background-color: rgb(213, 213, 213);
+  height: 75px;
+  line-height: 75px;
+  font-size: 3em;
+  text-align: center;
+}
+
+footer {
+  background-color: rgb(213, 213, 213);
+  height: 75px;
+  line-height: 75px;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+.Container {
+  width: 100%;
+  border: 1px;
+}
+
+.NavBar {
+  background-color: rgb(188, 233, 250);
+}
+
+.GroupList {
+  padding: 10px;
+  background-color: rgb(211, 243, 192);
+}
+
+.FeedList {
+}
+
+.Message {
+  border: solid;
+  border-width: 2px;
+  border-color: black;
+  border-radius: 8px;
+  margin: 6px 6px 6px 0px;
+  padding: 6px;
+  background-color: rgb(247, 255, 187); 
+}
+
+.From {
+  font-weight: bolder;
+  font-size: 1.5em; 
+}
+
+.Partial {
+  background-color: rgb(211, 243, 192);
+}
+

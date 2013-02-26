@@ -1,0 +1,133 @@
+<DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="../lib/yerf.js"></script>
+    <script type="text/javascript">
+      yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
+      yerf().start('feed.head').waterfall('blockingJs', 'done');
+      yerf('feed').start('windowOnLoad', 'documentReady', 'jqReady');
+      window.onload = function () {
+        yerf('feed.windowOnLoad').stop();
+      };
+
+      document.ready= function () {
+        yerf('feed.documentReady').stop();
+      };
+
+      // Some blocking JS
+      yerf().start('feed.head.blockingJs');
+      var start = Date.now();
+      var now;
+      var waitFor = 100;
+      while(true) {
+        now = Date.now();
+        if(now - start >= waitFor) {
+          break;
+        }
+      }
+      yerf('feed.head.blockingJs').stop();
+    </script>
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet">
+    <script type="text/javascript">
+      yerf().start('feed.head.done');
+      yerf('feed.head.done').stop();
+    </script>
+  </head>
+  <body>
+    <div class="row-fluid">
+      <header class="span12 page-header">Step 3 = Profit.com</header>
+    </div>
+
+    <div class="row-fluid NavBar">
+      <div class="span3 offset1"><strong>Notifications</strong> <span id="notificationCount"></span></div>
+      <div class="span4">
+        <form class="form-search">
+          <input type="text" class="input-large search-query" />
+          <button type="submit" class="btn">Search</button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="row-fluid">
+      
+      <div class="span2">
+        <div class="GroupList">
+          <strong>Group List</strong>
+          <ul>
+            <li>Group1 <span></span></li>
+            <li>Group2 <span></span></li>
+            <li>Group3 <span></span></li>
+            <li>Group4 <span></span></li>
+            <li>Group5 <span></span></li>
+            <li>Group6 <span></span></li>
+            <li>Group7 <span></span></li>
+          </ul>
+        </div>
+        <br />
+        <button id="fastSwitch" class="btn">Fast Switch</button>
+        <br />
+        <br />
+        <button id="subscribedSwitch" class="btn">Subscribed Switch</button>
+      </div>
+
+      <div class="span8 FeedList">
+        Loading...
+      </div>
+      
+      <div class="span2 Partial">
+        
+        <div class="ActivityList">
+          <strong>Activity List</strong>
+          <br />
+          Loading...
+        </div>
+
+        <br />
+
+        <div class="TrendingFiles">
+          <strong>Trending Files</strong>
+          <br />
+          Loading...
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row-fluid">
+      <footer class="span12">Legal Lorem Epsom</footer>
+    </div>
+    
+  </body>
+  <!-- Deferred JS -->
+  <script type="text/javascript">
+    yerf().start('feed.deferredJs').waterfall('deps', 'app').start('deps');
+  </script>
+  <script src="../dependencies/js/jquery-1.7.1.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      yerf('feed.jqReady').stop();
+    });
+  </script>
+  <script src="../dependencies/js/backbone.js"></script>
+  <script src="../dependencies/js/mustache.js"></script>
+  <script src="../dependencies/js/underscore.js"></script>
+  <script type="text/javascript">
+    yerf('feed.deferredJs.deps').stop();
+    yerf().start('feed.deferredJs.app');
+  </script>
+  <script src="js/app.js"></script>
+  <script type="text/javascript">
+    yerf('feed.deferredJs.app').stop();
+  </script>
+
+  <!-- Waterfall viewer -->
+  <script type="text/javascript">
+    // Report stats after 1, 2, 4 second intervals then every 10 seconds therafter
+    // yerf().config.postUrl = 'http://localhost:4000/metrics';
+    // yerf().enablePost([1000, 2000, 4000], 10000);
+    yerf().config.$ = $;
+    yerf().config.viewerCssPath =  '../lib/waterfall_viewer.css';
+    yerf().config.viewerJsPath =  '../lib/waterfall_viewer.js';
+  </script>
+</html>

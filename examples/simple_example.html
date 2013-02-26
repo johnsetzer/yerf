@@ -1,0 +1,52 @@
+<html>
+<head>
+  <title>yerf Simple Example</title>
+  <script type="text/javascript" src="../dependencies/js/jquery-1.7.1.js"></script>
+  <script type="text/javascript" src="../dependencies/js/underscore.js"></script>
+  <script type="text/javascript" src="../dependencies/js/mustache.js"></script>
+  <script type="text/javascript" src="../lib/perf2.js"></script>
+
+  <script type="text/javascript">
+    // None of these examples are taking actual time.  You could simulate time with setTimeout()
+
+    // Report stats after 1, 2, 3 second intervals then every 10 seconds thereafter
+    yerf.postUrl = 'http://localhost:4000/metrics';
+    yerf.enablePost([1000, 2000, 4000], 10000);
+    yerf.setJQuery(jQuery);
+
+    yerf.config = {
+      viewerCssPath: '../lib/waterfall_viewer.css'
+    , viewerJsPath: '../lib/waterfall_viewer.js'
+    };
+
+    // You can start and stop an event to record how long it took
+    yerf.start('simple1');
+    yerf.stop('simple1');
+
+    // foo will automatically get stopped after simple1 and simple2
+    // Note the automatic namespaces
+    yerf.start('foo').stopAfter('simple1', 'simple2');
+    yerf.start('foo.simple1');
+    yerf.start('foo.simple2');
+    yerf.stop('foo.simple1');
+    yerf.stop('foo.simple2');
+
+    // waterfall does everything stopAfter does plus it will record waterfall offsets for:
+    // bar, bar.simple1, and bar.simple2
+    // Note the automatic namespaces
+    yerf.start('bar').waterfall('simple1', 'simple2');
+    yerf.start('bar.simple1');
+    yerf.start('bar.simple2');
+    yerf.stop('bar.simple1');
+    yerf.stop('bar.simple2');
+  </script>
+</head>
+<body>
+
+
+<h1>yerf Simple Example</h1>
+
+<p>Look at script tag. Type yerf.render() in console to see waterfall diagram.</p>
+
+</body>
+</html>

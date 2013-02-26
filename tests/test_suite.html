@@ -1,0 +1,28 @@
+<DOCTYPE html>
+<html>
+  <head>
+    <link rel="shortcut icon" type="image/png" href="jasmine/jasmine_favicon.png">
+    <link href="../dependencies/jasmine/jasmine.css" rel="stylesheet">
+    <script src="../dependencies/jasmine/jasmine.js"></script>
+    <script src="../dependencies/jasmine/jasmine-html.js"></script>
+    
+    <script src="/testem.js"></script>
+    
+    <script src="../lib/yerf.js"></script>
+    <script src="yerf_spec.js"></script>
+
+    <script type="text/javascript">
+      (function() {
+        var jasmineEnv = jasmine.getEnv();
+        jasmineEnv.updateInterval = 750;
+
+        var htmlReporter = new jasmine.HtmlReporter();
+        jasmineEnv.addReporter(htmlReporter);
+
+        jasmineEnv.execute();
+      })();
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
