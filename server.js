@@ -65,3 +65,6 @@ app.listen(3000);
 
 console.log('URL:');
 console.log('http://localhost:3000/perfed_site/perfed_site.html');
+console.log('http://localhost:3000/fake_site/fake_site.html');
+console.log('http://localhost:3000/tests/test_suite.html');
+console.log('http://localhost:3000/examples/simple_example.html');
