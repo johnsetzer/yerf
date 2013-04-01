@@ -8,13 +8,14 @@
     
     <script src="/testem.js"></script>
     
+    <script src="../node_modules/kivi/kivi.js"></script>
     <script src="../lib/yerf.js"></script>
     <script src="yerf_spec.js"></script>
 
     <script type="text/javascript">
       (function() {
         var jasmineEnv = jasmine.getEnv();
-        jasmineEnv.updateInterval = 750;
+        jasmineEnv.updateInterval = 250;
 
         var htmlReporter = new jasmine.HtmlReporter();
         jasmineEnv.addReporter(htmlReporter);

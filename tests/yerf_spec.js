@@ -6,10 +6,8 @@ describe('yerf()', function () {
   Date = function(){
     if (nextDates.length > 0) {
       var time = nextDates.shift();
-      //console.log('Date returning', time);
       return new RealDate(time);
     } else {
-      //console.log('Date returning RealDate.');
       return new RealDate();
     }
   };
@@ -238,7 +236,7 @@ describe('yerf()', function () {
         it('changes state to stopped', function () {
           var sample = new (yerf().Sample)('test');
           sample.start().stop();
-          expect(sample.state).toEqual('reportable');
+          expect(sample.state).toEqual('stopped');
         });
 
         it('triggers stop event', function () {
@@ -249,20 +247,19 @@ describe('yerf()', function () {
           expect(sub).toHaveBeenCalledWith(sample);
         });
 
+        it('passes delta to kivi.set()', function () {
+          nextDates = [1, 3];
+          var sample = new (yerf().Sample)('test');
+          var kiviSpy =  spyOn(kivi, 'set');
+          sample.start().stop();
+          expect(kiviSpy.calls.length).toBe(1);
+          expect(kiviSpy).toHaveBeenCalledWith('yerf.delta.test', 2);
+        });
+
         it('returns the Sample so methods can be chained', function () {
           var sample = new (yerf().Sample)('test');
           expect(sample.start().stop()).toBe(sample);
         });
-
-        // TODO hand yerf() and moving to completed samples
-
-        // TODO fix this.  Should be in yerf() but not in completedSamples
-        // it('adds this sample to _allSamples and _activeSamples', function () {
-        //   var sample = new (yerf().Sample)('test');
-        //   sample.start();
-        //   expect(_allSamples[sample.fullKey()]).toBe(sample);
-        //   expect(_allSamples[sample.fullKey()]).toBe(sample);
-        // });
 
         describe('when the sample is already stopped and is stopped again', function () {
           it('calls onError()', function () {
@@ -427,9 +424,9 @@ describe('yerf()', function () {
         var dep1 = new (yerf().Sample)('test.dep1').start().stop();
         var dep2 = new (yerf().Sample)('test.dep2').start().stop();
 
-        expect(sample.state).toBe('reportable');
-        expect(dep1.state).toBe('reportable');
-        expect(dep2.state).toBe('reportable');
+        expect(sample.state).toBe('stopped');
+        expect(dep1.state).toBe('stopped');
+        expect(dep2.state).toBe('stopped');
       });
 
       it('sets the offsets of its children', function () {
@@ -444,7 +441,10 @@ describe('yerf()', function () {
         expect(dep2.offset).toBe(20);
       });
 
-      it('only moves children to reportable state when root event is stopped', function () {
+      it('only reports values to kivi when all the dependencies are finished', function () {
+        nextDates = [1, 10, 20, 30, 50, 60];
+        var kiviSpy =  spyOn(kivi, 'set');
+
         var sample = new (yerf().Sample)('test');
 
         sample.waterfall('dep1', 'dep2');
@@ -454,13 +454,30 @@ describe('yerf()', function () {
         expect(sample.state).toBe('started');
         expect(dep1.state).toBe('stopped');
         expect(dep2.state).toBe('started');
+        expect(kiviSpy).not.toHaveBeenCalled();
 
         dep2.stop();
 
-        expect(sample.state).toBe('reportable');
-        expect(dep1.state).toBe('reportable');
-        expect(dep2.state).toBe('reportable');
+        expect(sample.state).toBe('stopped');
+        expect(dep1.state).toBe('stopped');
+        expect(dep2.state).toBe('stopped');
 
+        expect(kiviSpy.calls.length).toBe(6);
+        
+        expect(kiviSpy.calls[0].args[0]).toBe('yerf.delta.test');
+        expect(kiviSpy.calls[0].args[1]).toBe(59);
+        expect(kiviSpy.calls[1].args[0]).toBe('yerf.offset.test');
+        expect(kiviSpy.calls[1].args[1]).toBe(0);
+
+        expect(kiviSpy.calls[2].args[0]).toBe('yerf.delta.test.dep1');
+        expect(kiviSpy.calls[2].args[1]).toBe(10);
+        expect(kiviSpy.calls[3].args[0]).toBe('yerf.offset.test.dep1');
+        expect(kiviSpy.calls[3].args[1]).toBe(9);
+
+        expect(kiviSpy.calls[4].args[0]).toBe('yerf.delta.test.dep2');
+        expect(kiviSpy.calls[4].args[1]).toBe(20);
+        expect(kiviSpy.calls[5].args[0]).toBe('yerf.offset.test.dep2');
+        expect(kiviSpy.calls[5].args[1]).toBe(29);
       });
 
       it('calls onError() if one of its dependencies is already started', function () {
@@ -677,111 +694,6 @@ describe('yerf()', function () {
     });
   });
 
-  describe('postData', function () {
-    beforeEach(function () {
-      nextDates = [1, 2, 11, 20, 30, 40, 40, 50, 60];
-
-        var started = yerf().start('started');               // 1
-        var stopped = yerf().start('stopped').stop();        // 2, 11
-        var root = yerf().start('root').waterfall('dep1');   // 20, 40
-        var dep1 = yerf().start('root.dep1').stop();         // 30, 40
-        var reported = yerf().start('reported').stop();      // 50, 60
-        reported.state = 'reported';
-    });
-
-    describe('when includeReported is true', function () {
-      it('creates and array of samples to jsonify', function () {
-        var expected = [
-          { key: 'stopped', val: 9 }
-        , { key: 'root', val: 20 }
-        , { key: 'offset.root', val: 0 }
-        , { key: 'root.dep1', val: 10 }
-        , { key: 'offset.root.dep1', val: 10 }
-        , { key: 'reported', val: 10 }
-        ];
-        expect(yerf().postData(true)).toEqual(expected);
-      });
-    });
-
-    describe('when includeReported is false', function () {
-      it('creates and array of samples to jsonify', function () {
-        var expected = [
-          { key: 'stopped', val: 9 }
-        , { key: 'root', val: 20 }
-        , { key: 'offset.root', val: 0 }
-        , { key: 'root.dep1', val: 10 }
-        , { key: 'offset.root.dep1', val: 10 }
-        ];
-        expect(yerf().postData(false)).toEqual(expected);
-      });
-    });
-  });
-
-  describe('post()', function () {
-
-    var postSuccessSpy, jquery, sample, ajaxSpy;
-
-    beforeEach(function () {
-      sample = yerf().start('test').stop();
-      postSuccessSpy = spyOn(yerf(), '_postSuccess').andCallThrough();
-      jquery = {ajax: function (params) {
-        params.success({});
-      }};
-      ajaxSpy = spyOn(jquery, 'ajax').andCallThrough();
-      yerf().config.$ = jquery;
-      yerf().config.postUrl = 'http://localhost'
-
-    });
-    
-    describe('when JQuery and post URL are set and there are samples to report', function () {
-      it('reports the samples and marks them reported', function () {
-        yerf().post();
-        
-        expect(ajaxSpy).toHaveBeenCalled();
-        expect(postSuccessSpy).toHaveBeenCalled();
-        
-        var params = ajaxSpy.mostRecentCall.args[0];
-        expect(params.url).toBe('http://localhost');
-        
-        expect(sample.state).toBe('reported');
-      });
-    });
-
-    describe('when JQuery and post URL are set and there are not samples to report', function () {
-      it('does not report report the samples', function () {
-        yerf('test').state = 'reported';
-        yerf().post();
-        
-        expect(ajaxSpy).not.toHaveBeenCalled();
-        expect(postSuccessSpy).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('when JQuery is not set and post URL is set and there are samples to report', function () {
-      it('does not report report the samples', function () {
-        yerf().config.$ = undefined;
-        expect(function () { yerf().post(); }).toThrow('You need to set yerf.config.$');
-        
-        expect(ajaxSpy).not.toHaveBeenCalled();
-        expect(postSuccessSpy).not.toHaveBeenCalled();
-        
-        expect(sample.state).toBe('reportable');
-      });
-    });
-
-    describe('when JQuery is set and post URL is not set and there are samples to report', function () {
-      it('does not report report the samples', function () {
-        yerf().config.postUrl = undefined;
-        expect(function () { yerf().post(); }).toThrow('You need to set yerf.config.postUrl');
-        
-        expect(ajaxSpy).not.toHaveBeenCalled();
-        expect(postSuccessSpy).not.toHaveBeenCalled();
-        
-        expect(sample.state).toBe('reportable');
-      });
-    });
-  });
-
   describe('clear()', function () {
     it('completely resets the state of yerf() and forgets any measurements taken', function () {
      
@@ -798,102 +710,6 @@ describe('yerf()', function () {
       yerf().trigger('key', 'event', {});
 
       expect(spy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('enablePost()', function () {
-    beforeEach(function () {
-      jasmine.Clock.useMock();
-    });
-
-    afterEach(function () {
-      yerf().disablePost();
-    });
-
-    describe('when recurringInterval is set', function () {
-      
-
-      it('calls post() at each member of the startingIntervalSeries and then uses the recurringInterval', function () {
-        var spy = spyOn(yerf(), 'post');
-        yerf().enablePost([100, 200], 300);
-        expect(spy.callCount).toBe(0);
-        jasmine.Clock.tick(105);
-        expect(spy.callCount).toBe(1);
-        jasmine.Clock.tick(100);
-        expect(spy.callCount).toBe(1);
-        jasmine.Clock.tick(105);
-        expect(spy.callCount).toBe(2);
-        jasmine.Clock.tick(300);
-        expect(spy.callCount).toBe(3);
-        jasmine.Clock.tick(300);
-        expect(spy.callCount).toBe(4);
-      });
-    });
-
-    describe('when recurringInterval is not set', function () {
-
-      it('calls post() at each member of the startingIntervalSeries and then stops', function () {
-        var spy = spyOn(yerf(), 'post');
-        yerf().enablePost([100, 200]);
-        expect(spy.callCount).toBe(0);
-        jasmine.Clock.tick(105);
-        expect(spy.callCount).toBe(1);
-        jasmine.Clock.tick(100);
-        expect(spy.callCount).toBe(1);
-        jasmine.Clock.tick(105);
-        expect(spy.callCount).toBe(2);
-        jasmine.Clock.tick(300);
-        expect(spy.callCount).toBe(2);
-        jasmine.Clock.tick(300);
-        expect(spy.callCount).toBe(2);
-      });
-    });
-
-    describe('when only recurringInterval is set', function () {
-
-      it('calls post() on recurringInterval', function () {
-        var spy = spyOn(yerf(), 'post');
-        yerf().enablePost(null, 200);
-        expect(spy.callCount).toBe(0);
-        jasmine.Clock.tick(200);
-        expect(spy.callCount).toBe(1);
-        jasmine.Clock.tick(200);
-        expect(spy.callCount).toBe(2);
-        jasmine.Clock.tick(205);
-        expect(spy.callCount).toBe(3);
-        jasmine.Clock.tick(200);
-        expect(spy.callCount).toBe(4);
-      });
-    });
-  });
-
-  describe('disablePost()', function () {
-    describe('when recurringInterval is set', function () {
-      beforeEach(function () {
-        jasmine.Clock.useMock();
-      });
-
-      it('stops interval calls to post', function () {
-        var spy = spyOn(yerf(), 'post');
-        yerf().enablePost(null, 300);
-        expect(spy.callCount).toBe(0);
-        jasmine.Clock.tick(305);
-        expect(spy.callCount).toBe(1);
-        yerf().disablePost();
-        jasmine.Clock.tick(305);
-        expect(spy.callCount).toBe(1);
-      });
-
-      it('stops series calls to post', function () {
-        var spy = spyOn(yerf(), 'post');
-        yerf().enablePost([300, 300, 300, 300]);
-        expect(spy.callCount).toBe(0);
-        jasmine.Clock.tick(305);
-        expect(spy.callCount).toBe(1);
-        yerf().disablePost();
-        jasmine.Clock.tick(305);
-        expect(spy.callCount).toBe(1);
-      });
     });
   });    
 });

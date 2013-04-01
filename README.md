@@ -7,7 +7,7 @@ yerf is a Javascript client side library designed to measure the runtime of prog
 - Namespaced events
 - Every sample is a key/value pair that can easily be injected into any tool.
 - A Sample with a given key can only be recorded once to ease logistics and to keep one client from skewing results by reporting an event many times.
-- Total missuses of the yerf, such as forgetting a required parameter, will throw an exception; but subtle runtime errors, like stopping a sample twice will call the onError() callback.
+- Total missuses of the yerf, such as forgetting a required parameter, will throw an exception; but subtle runtime errors, like stopping a sample twice, will call the onError() callback, which defaults to doing nothing unless debug mode is enabled. In which case, it logs to console.
 
 #Samples
 Samples consist of a key, a delta, a start time, an end time, and a state.  Most sample methods return themselves so they can be chained together.
@@ -53,36 +53,30 @@ Samples are event emitters
     sample.on('arbitrary_event', function (sample) {});
     sample.trigger('arbitrary_event');
 
-Samples don't throw runtime errors if you do something like try to start or stop them twice. They call onError().  The following is the default behavior, but you could copy and modify this statement to override the default behavior.  
-
-    yerf().Sample.prototype.onError = function(error) {
-      console.log(error.message);
-    };
-
 #Yerf Selector
 Create a sample.
 
-    `yerf().new('key');
+    yerf().new('key');
 
 Create and start a sample.
 
-    `yerf().start('key');
+    yerf().start('key');
 
 Query any existing sample.
 
-    `yerf('key');
+    yerf('key');
 
 Query any existing sample and stop it.
 
-    `yerf('key').stop();
+    yerf('key').stop();
 
 Get all samples.
 
-    `yerf().all();
+    yerf().all();
 
 Clear all the data yerf has collected.
 
-    `yerf().clear();
+    yerf().clear();
 
 Subscribe to and trigger events globally.
 
@@ -146,3 +140,11 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
 #Run tests with testem
 
     testem
+
+#Debugging
+
+Samples will throw  an `Error` if you forget a required parameter. If you cause a runtime error, such as trying to start or stop a sample twice or stopping a sample that hasn't started, yerf will call onError().  The following is the default behavior, but you could copy and modify this statement to override the default behavior.  
+
+    yerf().Sample.prototype.onError = function(error) {
+      console.log(error.message);
+    };
