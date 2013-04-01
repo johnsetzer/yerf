@@ -92,7 +92,7 @@ Manually post data to a server.
 
     kivi.post();
 
-Automatically, post data to a server after 1000ms, 2000ms, and 4000ms.
+Automatically, post data to a server after 1000ms, 2000ms after that, and 4000ms after that.
 
     kivi.enablePost([1000, 2000, 4000]);
 
