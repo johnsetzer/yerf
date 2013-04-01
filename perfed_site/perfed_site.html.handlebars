@@ -1,7 +1,12 @@
 <DOCTYPE html>
 <html>
   <head>
-    <script type="text/javascript" src="../lib/yerf.js"></script>
+    <script type="text/javascript">
+      {{{kivi}}}
+    </script>
+    <script type="text/javascript">
+      {{{yerf}}}
+    </script>
     <script type="text/javascript">
       yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
       yerf().start('feed.head').waterfall('blockingJs', 'done');
@@ -109,9 +114,9 @@
       yerf('feed.jqReady').stop();
     });
   </script>
+  <script src="../dependencies/js/underscore.js"></script>
   <script src="../dependencies/js/backbone.js"></script>
   <script src="../dependencies/js/mustache.js"></script>
-  <script src="../dependencies/js/underscore.js"></script>
   <script type="text/javascript">
     yerf('feed.deferredJs.deps').stop();
     yerf().start('feed.deferredJs.app');
@@ -123,10 +128,10 @@
 
   <!-- Waterfall viewer -->
   <script type="text/javascript">
-    // Report stats after 1, 2, 4 second intervals then every 10 seconds therafter
-    // yerf().config.postUrl = 'http://localhost:4000/metrics';
-    // yerf().enablePost([1000, 2000, 4000], 10000);
-    yerf().config.$ = $;
+    // Report stats after 1, 2, 4 second intervals
+    kivi.config.postUrl = 'http://localhost:3000/postUrl';
+    kivi.enablePost([1000, 2000, 4000]);
+    kivi.config.$ = $;
     yerf().config.viewerCssPath =  '../lib/waterfall_viewer.css';
     yerf().config.viewerJsPath =  '../lib/waterfall_viewer.js';
   </script>

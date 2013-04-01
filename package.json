@@ -1,16 +1,22 @@
 {
-  "author": "John Setzer",
-  "name": "yerf",
-  "description": "Javascript benchmarking and reporting framework for browsers.",
-  "version": "0.0.2",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:johnsetzer/yerf.git"
-  },
-  "engines": {
+  "name": "yerf"
+, "description": "Javascript benchmarking and reporting framework for browsers."
+, "author": "John Setzer"
+, "version": "0.0.2"
+, "repository": {
+    "type": "git"
+  , "url": "git@github.com:johnsetzer/yerf.git"
+  }
+, "engines": {
     "node": ">=0.8.8"
-  },
-  "dependencies": {
-    "express": ">=3.0.0rc4"
+  }
+, "dependencies": {
+    "kivi": "0.0.3"
+  }
+, "devDependencies": {
+    "express": "3.0.x"
+  , "consolidate": "0.8.x"
+  , "node-minify": "0.7.x"
+  , "handlebars": "1.0.x"
   }
 }

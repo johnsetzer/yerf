@@ -1,4 +1,4 @@
-describe('yerf()', function () {
+describe('yerf()', function () {  
 
   // Stub the Date Constructor
   var nextDates = []; // Array of integers
@@ -31,6 +31,7 @@ describe('yerf()', function () {
   };
 
   beforeEach(function () {
+    kivi.clear();
     yerf().clear(); 
   });
 
@@ -491,11 +492,11 @@ describe('yerf()', function () {
 
       it('handles three levels of nesting', function () {
         nextDates = [1, 100, 100, 150, 160, 200, 200, 500, 500, 550, 560, 600, 600, 600];
-        var root = yerf().new('root').waterfall('dep1', 'dep2');
-        var dep1 = yerf().new('root.dep1').waterfall('dep1', 'dep2').start('dep1', 'dep2');
+        var root = yerf().create('root').waterfall('dep1', 'dep2');
+        var dep1 = yerf().create('root.dep1').waterfall('dep1', 'dep2').start('dep1', 'dep2');
         var dep1dep1 = yerf('root.dep1.dep1').stop();
         var dep1dep2 = yerf('root.dep1.dep2').stop();
-        var dep2 = yerf().new('root.dep2').waterfall('dep1', 'dep2').start('dep1', 'dep2');
+        var dep2 = yerf().create('root.dep2').waterfall('dep1', 'dep2').start('dep1', 'dep2');
         var dep2dep1 = yerf('root.dep2.dep1').stop();
         var dep2dep2 = yerf('root.dep2.dep2').stop();
 
@@ -627,7 +628,7 @@ describe('yerf()', function () {
       it('returns the yerf object', function () {
         var obj = yerf();
         expect(typeof obj).toBe('object');
-        expect(typeof obj.new).toBe('function');
+        expect(typeof obj.create).toBe('function');
         expect(typeof obj.start).toBe('function');
         expect(typeof obj.Sample).toBe('function');
       });
@@ -648,25 +649,25 @@ describe('yerf()', function () {
     });
   });
 
-  describe('new()', function () {
+  describe('create()', function () {
     describe('when a fullKey is passed in', function () {
       it('calls onError() if the sample already exists', function () {
         var sample = new (yerf().Sample)('test');
         var sampleOnError = expectOnError(yerf().Sample.prototype, 'Sample[test] already exists.');
 
-        expect(yerf().new('test')).toBe(sample);
+        expect(yerf().create('test')).toBe(sample);
         expect(sampleOnError).toHaveBeenCalled();
       });
 
       it('returns a new sample if the sample does not exist', function () {
-        var sample = yerf().new('test');
+        var sample = yerf().create('test');
         expect(sample.state).toBe('created');
       });
     });
 
     describe('when a fullKey is not passed in', function () {
       it('throws an exception', function () {
-        expect(function() { yerf().new(); }).toThrow('You must specify a key for this Sample.');
+        expect(function() { yerf().create(); }).toThrow('You must specify a key for this Sample.');
       });
     });
   });

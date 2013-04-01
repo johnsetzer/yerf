@@ -12,13 +12,13 @@ yerf is a Javascript client side library designed to measure the runtime of prog
 #Samples
 Samples consist of a key, a delta, a start time, an end time, and a state.  Most sample methods return themselves so they can be chained together.
     
-    var sample = yerf().new('key');
+    var sample = yerf().create('key');
     sample.start();
     sample.stop();
 
 or use chaining
     
-    var sample = yerf().new('key').start().stop();
+    var sample = yerf().create('key').start().stop();
 
 Accessing attributes
 
@@ -56,7 +56,7 @@ Samples are event emitters
 #Yerf Selector
 Create a sample.
 
-    yerf().new('key');
+    yerf().create('key');
 
 Create and start a sample.
 
@@ -128,13 +128,13 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
 
 #Run example
 
-    node file_server.js
+    node server.js
     Open http://localhost:3000/perfed_site/perfed_site.html
     Open your browser console and run 'yerf().render();'
 
 #Run tests
 
-    node file_server.js
+    node server.js
     http://localhost:3000/tests/test_suite.html
 
 #Run tests with testem
