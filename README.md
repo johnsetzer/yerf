@@ -83,40 +83,24 @@ Subscribe to and trigger events globally.
     yerf().on('parent.child', 'start', function (sample) {});
     yerf().trigger('parent.child', 'start', yerf('parent.child'));
 
-Configure yerf so you can post data to a remote server.
+yerf outsources posting data to a remote server to the [kivi](https://github.com/johnsetzer/kivi) library.  You need to include both the `kivi` and the `yerf` source in your HTML page and then configure these `kivi` properties.
 
-    yerf().config.$ = jquery;
-    yerf().config.postUrl = 'http://localhost:4000';
+    kivi.config.postUrl = 'http://localhost:3000/postUrl';
+    kivi.config.$ = jQuery;
 
 Manually post data to a server.
 
-    yerf().post();
+    kivi.post();
 
-Automatically, post data to a server after 100ms, 200ms, and every 300ms thereafter.
+Automatically, post data to a server after 1000ms, 2000ms, and 4000ms.
 
-    yerf().enablePost([100, 200], 300);
-
-Automatically, post data to a server after 100ms, 200ms.
-
-    yerf().enablePost([100, 200]);
-
-Automatically, post data to a server every 300ms.
-
-    yerf().enablePost(null, 300);
+    kivi.enablePost([1000, 2000, 4000]);
 
 Disable automatic posting.
 
-    yerf().disablePost();
+    kivi.disablePost();
 
-See the data yerf will post on the next call to `post()`.
-
-    yerf().postData();
-
-See all data yerf has posted and all data it will post.
-
-    yerf().postData(true);
-
-Render a waterfall view of all completed samples in the browser.  yerf.js does not include the render() logic.  When render() is called, yerf will inject the needed code on demand.
+Render a waterfall view of all completed samples in the browser.  yerf.js does not include the render() logic.  When render() is called, yerf will download and execute the needed code on demand.
 
     yerf().render()
 
