@@ -722,6 +722,94 @@ describe('yerf()', function () {
       });
     });
 
+    describe('backfillRequest', function () {
+      describe('when a key is provided', function () {
+        it('searches GetEntries for a matching request to backfill and uses provided key', function () {
+          mockGetTime(100, 200);
+          
+          var sample = new (yerf().Sample)('sample');
+
+          var perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
+            return [
+              {
+                name: 'http://www.server.com/assets/19/action'
+              , startTime: 50
+              , duration: 60
+              }
+            ];
+          });
+          
+          sample.start().stop();
+          sample.backfillRequest(/action/, 'backfill');
+          
+          expect(yerf().usesModernPerf).toBe(true);
+          expect(perfSpy).toHaveBeenCalled();
+
+          var action = sample.children.backfill;
+          expect(action.parent).toBe(sample);
+          expect(action.key).toBe('sample.backfill');
+          expect(action.startedAt).toBe(50);
+          expect(action.stoppedAt).toBe(110);
+          expect(action.delta).toBe(60);
+        });
+      });
+
+      describe('when a key is not provided', function () {
+        it('searches GetEntries for a matching request to backfill and uses inner most matching group as key', function () {
+          mockGetTime(100, 200);
+          
+          var sample = new (yerf().Sample)('sample');
+
+          var perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
+            return [
+              {
+                name: 'http://www.server.com/assets/19/action.json'
+              , startTime: 50
+              , duration: 60
+              }
+            ];
+          });
+          
+          sample.start().stop();
+          sample.backfillRequest(/(assets.*(action)).json/);
+          
+          expect(yerf().usesModernPerf).toBe(true);
+          expect(perfSpy).toHaveBeenCalled();
+
+          var action = sample.children.action;
+          expect(action.parent).toBe(sample);
+          expect(action.key).toBe('sample.action');
+          expect(action.startedAt).toBe(50);
+          expect(action.stoppedAt).toBe(110);
+          expect(action.delta).toBe(60);
+        });
+      });
+
+      describe('when usesModernPerf is false', function () {
+        it('does not backfill', function () {
+          mockGetTime(100, 200);
+          
+          var sample = new (yerf().Sample)('sample');
+          sample.children = {};
+
+          var perfSpy = spyOn(yerf(), 'usesModernPerf').andReturn(false);
+          
+          sample.start().stop();
+          sample.backfillRequest(/action/, 'backfill');
+
+          var action = sample.children.backfill;
+          expect(action).toBe(undefined);
+          expect(yerf('sample.backfill')).toBe(undefined);
+        });
+      });
+
+      it('throws an exception when urlPattern is omitted', function () {
+        var sample = new (yerf().Sample)('sample');
+
+        expect(function () { sample.backfillRequest(); }).toThrow('You must specify a urlPattern for this Sample.');
+      });
+    });
+
     describe('beforeReport', function () {
       it('gets called before _reportToKivi', function () {
         var beforeReportCalled = false;
