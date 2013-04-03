@@ -557,100 +557,160 @@ describe('yerf()', function () {
       });
     });
 
-// not started
-// not stopped
-// in the middle
-// starts before event
-// ends after
-
     describe('backfill()', function () {
       var grandParent
-      , parent;
+      , parent
+      , child
+      , uncle;
 
-      var setupCheck = function () {
+      var checkGrandParent = function () {
         expect(grandParent.startedAt).toBe(50);
         expect(grandParent.stoppedAt).toBe(200);
         expect(grandParent.delta).toBe(150);
+        expect(grandParent.offset).toBe(0);
+      }
 
+      var checkUncle = function () {
+        expect(uncle.startedAt).toBe(100);
+        expect(uncle.stoppedAt).toBe(105);
+        expect(uncle.delta).toBe(5);
+        expect(uncle.offset).toBe(50);
+      }
+
+      var checkParent= function () {
         expect(parent.startedAt).toBe(100);
         expect(parent.stoppedAt).toBe(200);
         expect(parent.delta).toBe(100);
+        expect(parent.offset).toBe(50);
+      }
+
+      var checkChild = function () {
+        expect(child.startedAt).toBe(150);
+        expect(child.stoppedAt).toBe(200);
+        expect(child.delta).toBe(50);
+        expect(child.offset).toBe(50);
+      }
+
+      var setupCheck = function () {
+        checkGrandParent();
+        checkUncle();
+        checkParent();
+        checkChild();
       };
       
       beforeEach(function () {
-        mockGetTime(50, 100, 150, 200, 200, 200);
+        mockGetTime(50, 100, 100, 105, 150, 200, 200, 200);
 
         grandParent = new (yerf().Sample)('grandParent');
-        grandParent.waterfall('parent');
+        grandParent.waterfall('parent', 'uncle');
+
+        uncle = grandParent.start('uncle').find('uncle');
 
         parent = grandParent.start('parent').find('parent');
         parent.waterfall('child', 'child');
 
+        uncle.stop();
+
         child = parent.start('child').find('child');
       });
 
-      it('adds the sample to the parent', function () {
-        child.stop();
-        setupCheck();
+      // it('adds the sample to the parent', function () {
+      //   child.stop();
+      //   setupCheck();
 
-        var backfill = parent.backfill('backfill', 110, 190);
+      //   var result = parent.backfill('backfill', 110, 190);
+      //   var backfill = parent.find('backfill');
+      //   expect(result).toBe(parent);
 
-        expect(backfill.parent).toBe(parent);
-        expect(parent.children.backfill).toBe(backfill);
-        expect(backfill.key).toBe('grandParent.parent.backfill');
-        expect(backfill.startedAt).toBe(110);
-        expect(backfill.stoppedAt).toBe(190);
-        expect(backfill.delta).toBe(80);
-        expect(backfill.state).toBe('stopped');
-      });
+      //   expect(backfill.parent).toBe(parent);
+      //   expect(parent.children.backfill).toBe(backfill);
+      //   expect(backfill.key).toBe('grandParent.parent.backfill');
+      //   expect(backfill.startedAt).toBe(110);
+      //   expect(backfill.stoppedAt).toBe(190);
+      //   expect(backfill.delta).toBe(80);
+      //   expect(backfill.state).toBe('stopped');
+      // });
 
-      describe('when start and stop are between the parent\'s start and stop', function () {
-        it('adds the sample to the parent', function () {
-          child.stop();
-          setupCheck();
+      // describe('when start and stop are between the parent\'s start and stop', function () {
+      //   it('does not change the start times or offsets', function () {
+      //     child.stop();
+      //     setupCheck();
 
-          var backfill = child.backfill('backfill', 110, 190);
+      //     var result = parent.backfill('backfill', 110, 190);
+      //     expect(result).toBe(parent);
 
-          // Parent and children are unchanged
-          setupCheck();
-        });
-      });
+      //     // Parent and children are unchanged
+      //     setupCheck();
+      //   });
+      // });
 
       describe('when start is before grand parent start', function () {
-        it('propagates start changes up the parent tree', function () {
+        it('propagates start changes up the parent tree and changes children offsets', function () {
           child.stop();
           setupCheck();
 
-          var backfill = child.backfill('backfill', 0, 199);
+          var result = parent.backfill('backfill', 0, 199);
+          var backfill = parent.find('backfill');
+          expect(result).toBe(parent);
+
+          // Backfill's offset is updated
+          expect(backfill.offset).toBe(0);
 
           // GrandParent's started time is updated
           expect(grandParent.startedAt).toBe(0);
           expect(grandParent.stoppedAt).toBe(200);
           expect(grandParent.delta).toBe(200);
+          expect(grandParent.offset).toBe(0);
 
-          // Parent's started time is updated
+          // Parent's started time and offset is updated
           expect(parent.startedAt).toBe(0);
           expect(parent.stoppedAt).toBe(200);
           expect(parent.delta).toBe(200);
+          expect(parent.offset).toBe(0);
+
+          // Uncle's offset is updated
+          expect(uncle.startedAt).toBe(100);
+          expect(uncle.stoppedAt).toBe(105);
+          expect(uncle.delta).toBe(5);
+          expect(uncle.offset).toBe(100);
+
+          // Child's offset is updated
+          expect(child.startedAt).toBe(150);
+          expect(child.stoppedAt).toBe(200);
+          expect(child.delta).toBe(50);
+          expect(child.offset).toBe(150);
         });
       });
 
       describe('when start is before parent start but after grandparent start', function () {
-        it('propagates start changes only to parent', function () {
+        it('propagates start changes only to parent and changes children offsets', function () {
           child.stop();
           setupCheck();
 
-          var backfill = child.backfill('backfill', 75, 199);
+          var result = parent.backfill('backfill', 75, 199);
+          var backfill = parent.find('backfill');
+          expect(result).toBe(parent);
 
-          // GrandParent's started time is updated
-          expect(grandParent.startedAt).toBe(50);
-          expect(grandParent.stoppedAt).toBe(200);
-          expect(grandParent.delta).toBe(150);
+          // Backfill's offset is updated
+          expect(backfill.offset).toBe(0);
+
+          // GrandParent is unchanged
+          checkGrandParent();
 
           // Parent's started time is updated
           expect(parent.startedAt).toBe(75);
           expect(parent.stoppedAt).toBe(200);
           expect(parent.delta).toBe(125);
+          expect(parent.offset).toBe(25);
+
+          // Uncle is unchanged
+          checkUncle();
+
+          // Child's offset is updated
+          expect(child.startedAt).toBe(150);
+          expect(child.stoppedAt).toBe(200);
+          expect(child.delta).toBe(50);
+          expect(child.offset).toBe(75);
         });
       });
 
@@ -659,17 +719,30 @@ describe('yerf()', function () {
           child.stop();
           setupCheck();
 
-          var backfill = child.backfill('backfill', 160, 250);
+          var result = parent.backfill('backfill', 160, 250);
+          var backfill = parent.find('backfill');
+          expect(result).toBe(parent);
 
-          // GrandParent's started time is updated
+          // Backfill's offset is unchanged
+          expect(backfill.offset).toBe(60);
+
+          // GrandParent's end time is updated
           expect(grandParent.startedAt).toBe(50);
           expect(grandParent.stoppedAt).toBe(250);
           expect(grandParent.delta).toBe(200);
+          expect(grandParent.offset).toBe(0);
 
-          // Parent's started time is updated
+          // Parent's end time is updated
           expect(parent.startedAt).toBe(100);
           expect(parent.stoppedAt).toBe(250);
           expect(parent.delta).toBe(150);
+          expect(parent.offset).toBe(50);
+
+          // Uncle is unchanged
+          checkUncle();
+
+          // Child is unchanged
+          checkChild();
         });
       });
 
@@ -678,17 +751,36 @@ describe('yerf()', function () {
           child.stop();
           setupCheck();
 
-          var backfill = child.backfill('backfill', 1, 250);
+          var result = parent.backfill('backfill', 1, 250);
+          var backfill = parent.find('backfill');
+          expect(result).toBe(parent);
 
-          // GrandParent's started time is updated
+          // Backfill's offset is updated
+          expect(backfill.offset).toBe(0);
+
+          // GrandParent's times are updated
           expect(grandParent.startedAt).toBe(1);
           expect(grandParent.stoppedAt).toBe(250);
           expect(grandParent.delta).toBe(249);
+          expect(grandParent.offset).toBe(0);
 
-          // Parent's started time is updated
+          // Parent's times are updated
           expect(parent.startedAt).toBe(1);
           expect(parent.stoppedAt).toBe(250);
           expect(parent.delta).toBe(249);
+          expect(parent.offset).toBe(0);
+
+          // Uncle's offset is updated
+          expect(uncle.startedAt).toBe(100);
+          expect(uncle.stoppedAt).toBe(105);
+          expect(uncle.delta).toBe(5);
+          expect(uncle.offset).toBe(99);
+
+          // Child's offset is updated
+          expect(child.startedAt).toBe(150);
+          expect(child.stoppedAt).toBe(200);
+          expect(child.delta).toBe(50);
+          expect(child.offset).toBe(149);
         });
       });
 
@@ -716,7 +808,8 @@ describe('yerf()', function () {
       it('calls onError() if the parent is not stopped', function () {
         var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent] must be stopped to backfill with key[backfill].');
 
-        parent.backfill('backfill', 110, 190);
+        var result = parent.backfill('backfill', 110, 190);
+        expect(result).toBe(parent);
 
         expect(sampleOnError).toHaveBeenCalled();
       });
@@ -740,7 +833,8 @@ describe('yerf()', function () {
           });
           
           sample.start().stop();
-          sample.backfillRequest(/action/, 'backfill');
+          var result = sample.backfillRequest(/action/, 'backfill');
+          expect(result).toBe(sample);
           
           expect(yerf().usesModernPerf).toBe(true);
           expect(perfSpy).toHaveBeenCalled();
@@ -771,7 +865,8 @@ describe('yerf()', function () {
           });
           
           sample.start().stop();
-          sample.backfillRequest(/(assets.*(action)).json/);
+          var result = sample.backfillRequest(/(assets.*(action)).json/);
+          expect(result).toBe(sample);
           
           expect(yerf().usesModernPerf).toBe(true);
           expect(perfSpy).toHaveBeenCalled();
@@ -795,7 +890,8 @@ describe('yerf()', function () {
           var perfSpy = spyOn(yerf(), 'usesModernPerf').andReturn(false);
           
           sample.start().stop();
-          sample.backfillRequest(/action/, 'backfill');
+          var result = sample.backfillRequest(/action/, 'backfill');
+          expect(result).toBe(sample);
 
           var action = sample.children.backfill;
           expect(action).toBe(undefined);

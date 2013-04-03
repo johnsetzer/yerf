@@ -2,13 +2,36 @@
 <html>
   <head>
     <script type="text/javascript">
+    var epoch = new Date().getTime();
+      var getTime = function () {
+        if(performance && performance.now) {
+          return performance.now();
+        } else {
+          return new Date().getTime() - epoch;
+        }
+      };
+      var kiviStart = getTime();
       {{{kivi}}}
+      var kiviEnd = getTime();
+      console.log('kivi delta = ' + (kiviEnd - kiviStart));
     </script>
     <script type="text/javascript">
+      var yerfStart = getTime();
       {{{yerf}}}
+      var yerfEnd = getTime();
+      console.log('yerf delta = ' + (yerfEnd - yerfStart));
+      console.log('NOW', getTime());
     </script>
     <script type="text/javascript">
-      yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
+      var feedSample = yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
+      feedSample.beforeReport = function () {
+        if (yerf().usesModernPerf) {
+          feedSample.backfill('navigationStart', 0, feedSample.startedAt);
+        }
+        feedSample.backfillRequest(/.*\/(\w*).js/);
+        feedSample.backfillRequest(/.*\/(\w*).css/);
+        feedSample.backfillRequest(/js\/(jquery.*).js/, 'jquery');
+      }
       yerf().start('feed.head').waterfall('blockingJs', 'done');
       yerf('feed').start('windowOnLoad', 'documentReady', 'jqReady');
       window.onload = function () {
