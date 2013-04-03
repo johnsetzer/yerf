@@ -1,21 +1,23 @@
 describe('yerf()', function () {  
 
-  // Stub the Date Constructor
-  var nextDates = []; // Array of integers
-  var RealDate = Date;
-  Date = function(){
-    if (nextDates.length > 0) {
-      var time = nextDates.shift();
-      return new RealDate(time);
-    } else {
-      return new RealDate();
-    }
+  // Mock yerf().getTime()
+  var getTimeSpy;
+  var mockGetTime = function () {
+    var nextTimes = Array.prototype.slice.call(arguments);
+    getTimeSpy = spyOn(yerf(), 'getTime').andCallFake(function () {
+      if (nextTimes.length > 0) {
+        var time = nextTimes.shift();
+        return time;
+      } else {
+        return -1111; // Error Code
+      }
+    });
   };
 
   var expectSample = function (sample, key, startedAt, stoppedAt, delta) {
     expect(sample.key).toBe(key);
-    expect(sample.startedAt.getTime()).toBe(startedAt);
-    expect(sample.stoppedAt.getTime()).toBe(stoppedAt);
+    expect(sample.startedAt).toBe(startedAt);
+    expect(sample.stoppedAt).toBe(stoppedAt);
     expect(sample.delta).toBe(delta);
   };
 
@@ -36,7 +38,7 @@ describe('yerf()', function () {
   });
 
   describe('Sample', function () {
-    describe('new()', function () {
+    describe('constructor', function () {
       it('returns object with key set and all other values set to default', function () {
         var sample = new (yerf().Sample)('test');
         expect(sample.key).toBe('test');
@@ -75,6 +77,20 @@ describe('yerf()', function () {
       it('throws an exception if no key is passed in', function () {
         var level1 = new (yerf().Sample)('1');
         expect(function(){ level1.fullChildKey(); }).toThrow('You must specify a childKey.');
+      });
+    });
+
+    describe('find()', function () {
+      it('returns the sample with a relative path from the parent', function () {
+        var level1 = new (yerf().Sample)('1');
+        var level2 = level1.waterfall('2').start('2').children['2'];
+        var level3 = level2.waterfall('3').start('3').children['3'];
+        expect(level1.find('2.3')).toBe(yerf('1.2.3'));
+      });
+
+      it('throws an exception if no key is passed in', function () {
+        var level1 = new (yerf().Sample)('1');
+        expect(function(){ level1.find() }).toThrow('You must specify a childKey.');
       });
     });
 
@@ -139,10 +155,10 @@ describe('yerf()', function () {
     describe('start()', function () {
       describe('when there are no arguments', function () {
         it('sets startedAt', function () {
-          nextDates = [1];
+          mockGetTime(1);
           var sample = new (yerf().Sample)('test');
           sample.start();
-          expect(sample.startedAt.getTime()).toEqual(1);
+          expect(sample.startedAt).toEqual(1);
         });
 
         it('changes state to started', function () {
@@ -166,7 +182,7 @@ describe('yerf()', function () {
 
         describe('when the sample has a parent', function () {
           it('sets offset from parent\'s started at', function () {
-            nextDates = [1, 3];
+            mockGetTime(1, 3);
             var sample = new (yerf().Sample)('test');
             var parent = new (yerf().Sample)('parent');
             sample.parent = parent;
@@ -227,10 +243,10 @@ describe('yerf()', function () {
     describe('stop()', function () {
       describe('when there are no arguments', function () {
         it('sets stoppedAt and delta', function () {
-          nextDates = [1, 3];
+          mockGetTime(1, 3);
           var sample = new (yerf().Sample)('test');
           sample.start().stop();
-          expect(sample.stoppedAt.getTime()).toEqual(3);
+          expect(sample.stoppedAt).toEqual(3);
           expect(sample.delta).toEqual(2);
         });
 
@@ -249,7 +265,7 @@ describe('yerf()', function () {
         });
 
         it('passes delta to kivi.set()', function () {
-          nextDates = [1, 3];
+          mockGetTime(1, 3);
           var sample = new (yerf().Sample)('test');
           var kiviSpy =  spyOn(kivi, 'set');
           sample.start().stop();
@@ -272,7 +288,7 @@ describe('yerf()', function () {
           });
         });
 
-        describe('when the sample is already stopped before it is started', function () {
+        describe('when the sample is stopped before it is started', function () {
           it('calls onError()', function () {
             var sample = new (yerf().Sample)('test');
             var sampleOnError = expectOnError(sample, 'Sample[test] has not been started.');
@@ -431,7 +447,7 @@ describe('yerf()', function () {
       });
 
       it('sets the offsets of its children', function () {
-        nextDates = [10, 20, 30];
+        mockGetTime(10, 20, 30);
         var sample = new (yerf().Sample)('test');
 
         sample.waterfall('dep1', 'dep2');
@@ -443,7 +459,7 @@ describe('yerf()', function () {
       });
 
       it('only reports values to kivi when all the dependencies are finished', function () {
-        nextDates = [1, 10, 20, 30, 50, 60];
+        mockGetTime(1, 10, 20, 30, 50, 60);
         var kiviSpy =  spyOn(kivi, 'set');
 
         var sample = new (yerf().Sample)('test');
@@ -491,7 +507,7 @@ describe('yerf()', function () {
       });
 
       it('handles three levels of nesting', function () {
-        nextDates = [1, 100, 100, 150, 160, 200, 200, 500, 500, 550, 560, 600, 600, 600];
+        mockGetTime(1, 100, 100, 150, 160, 200, 200, 500, 500, 550, 560, 600, 600, 600);
         var root = yerf().create('root').waterfall('dep1', 'dep2');
         var dep1 = yerf().create('root.dep1').waterfall('dep1', 'dep2').start('dep1', 'dep2');
         var dep1dep1 = yerf('root.dep1.dep1').stop();
@@ -508,21 +524,21 @@ describe('yerf()', function () {
         expect(dep2dep1.offset).toBe(0);
         expect(dep2dep2.offset).toBe(50);
 
-        expect(root.startedAt.getTime()).toBe(1);
-        expect(dep1.startedAt.getTime()).toBe(100);
-        expect(dep1dep1.startedAt.getTime()).toBe(100);
-        expect(dep1dep2.startedAt.getTime()).toBe(150);
-        expect(dep2.startedAt.getTime()).toBe(500);
-        expect(dep2dep1.startedAt.getTime()).toBe(500);
-        expect(dep2dep2.startedAt.getTime()).toBe(550);
+        expect(root.startedAt).toBe(1);
+        expect(dep1.startedAt).toBe(100);
+        expect(dep1dep1.startedAt).toBe(100);
+        expect(dep1dep2.startedAt).toBe(150);
+        expect(dep2.startedAt).toBe(500);
+        expect(dep2dep1.startedAt).toBe(500);
+        expect(dep2dep2.startedAt).toBe(550);
 
-        expect(root.stoppedAt.getTime()).toBe(600);
-        expect(dep1.stoppedAt.getTime()).toBe(200);
-        expect(dep1dep1.stoppedAt.getTime()).toBe(160);
-        expect(dep1dep2.stoppedAt.getTime()).toBe(200);
-        expect(dep2.stoppedAt.getTime()).toBe(600);
-        expect(dep2dep1.stoppedAt.getTime()).toBe(560);
-        expect(dep2dep2.stoppedAt.getTime()).toBe(600);
+        expect(root.stoppedAt).toBe(600);
+        expect(dep1.stoppedAt).toBe(200);
+        expect(dep1dep1.stoppedAt).toBe(160);
+        expect(dep1dep2.stoppedAt).toBe(200);
+        expect(dep2.stoppedAt).toBe(600);
+        expect(dep2dep1.stoppedAt).toBe(560);
+        expect(dep2dep2.stoppedAt).toBe(600);
 
         expect(root.children.dep1).toBe(dep1);
         expect(root.children.dep2).toBe(dep2);
@@ -538,6 +554,171 @@ describe('yerf()', function () {
         expect(dep2.children.dep2).toBe(dep2dep2);
         expect(dep2dep1.parent).toBe(dep2);
         expect(dep2dep2.parent).toBe(dep2);
+      });
+    });
+
+// not started
+// not stopped
+// in the middle
+// starts before event
+// ends after
+
+    describe('backfill()', function () {
+      var grandParent
+      , parent;
+
+      var setupCheck = function () {
+        expect(grandParent.startedAt).toBe(50);
+        expect(grandParent.stoppedAt).toBe(200);
+        expect(grandParent.delta).toBe(150);
+
+        expect(parent.startedAt).toBe(100);
+        expect(parent.stoppedAt).toBe(200);
+        expect(parent.delta).toBe(100);
+      };
+      
+      beforeEach(function () {
+        mockGetTime(50, 100, 150, 200, 200, 200);
+
+        grandParent = new (yerf().Sample)('grandParent');
+        grandParent.waterfall('parent');
+
+        parent = grandParent.start('parent').find('parent');
+        parent.waterfall('child', 'child');
+
+        child = parent.start('child').find('child');
+      });
+
+      it('adds the sample to the parent', function () {
+        child.stop();
+        setupCheck();
+
+        var backfill = parent.backfill('backfill', 110, 190);
+
+        expect(backfill.parent).toBe(parent);
+        expect(parent.children.backfill).toBe(backfill);
+        expect(backfill.key).toBe('grandParent.parent.backfill');
+        expect(backfill.startedAt).toBe(110);
+        expect(backfill.stoppedAt).toBe(190);
+        expect(backfill.delta).toBe(80);
+        expect(backfill.state).toBe('stopped');
+      });
+
+      describe('when start and stop are between the parent\'s start and stop', function () {
+        it('adds the sample to the parent', function () {
+          child.stop();
+          setupCheck();
+
+          var backfill = child.backfill('backfill', 110, 190);
+
+          // Parent and children are unchanged
+          setupCheck();
+        });
+      });
+
+      describe('when start is before grand parent start', function () {
+        it('propagates start changes up the parent tree', function () {
+          child.stop();
+          setupCheck();
+
+          var backfill = child.backfill('backfill', 0, 199);
+
+          // GrandParent's started time is updated
+          expect(grandParent.startedAt).toBe(0);
+          expect(grandParent.stoppedAt).toBe(200);
+          expect(grandParent.delta).toBe(200);
+
+          // Parent's started time is updated
+          expect(parent.startedAt).toBe(0);
+          expect(parent.stoppedAt).toBe(200);
+          expect(parent.delta).toBe(200);
+        });
+      });
+
+      describe('when start is before parent start but after grandparent start', function () {
+        it('propagates start changes only to parent', function () {
+          child.stop();
+          setupCheck();
+
+          var backfill = child.backfill('backfill', 75, 199);
+
+          // GrandParent's started time is updated
+          expect(grandParent.startedAt).toBe(50);
+          expect(grandParent.stoppedAt).toBe(200);
+          expect(grandParent.delta).toBe(150);
+
+          // Parent's started time is updated
+          expect(parent.startedAt).toBe(75);
+          expect(parent.stoppedAt).toBe(200);
+          expect(parent.delta).toBe(125);
+        });
+      });
+
+      describe('when end is after grand parent end', function () {
+        it('propagates end changes up the parent tree', function () {
+          child.stop();
+          setupCheck();
+
+          var backfill = child.backfill('backfill', 160, 250);
+
+          // GrandParent's started time is updated
+          expect(grandParent.startedAt).toBe(50);
+          expect(grandParent.stoppedAt).toBe(250);
+          expect(grandParent.delta).toBe(200);
+
+          // Parent's started time is updated
+          expect(parent.startedAt).toBe(100);
+          expect(parent.stoppedAt).toBe(250);
+          expect(parent.delta).toBe(150);
+        });
+      });
+
+      describe('when start and end are beyond the parents bounds', function () {
+        it('propagates start and end changes up the parent tree', function () {
+          child.stop();
+          setupCheck();
+
+          var backfill = child.backfill('backfill', 1, 250);
+
+          // GrandParent's started time is updated
+          expect(grandParent.startedAt).toBe(1);
+          expect(grandParent.stoppedAt).toBe(250);
+          expect(grandParent.delta).toBe(249);
+
+          // Parent's started time is updated
+          expect(parent.startedAt).toBe(1);
+          expect(parent.stoppedAt).toBe(250);
+          expect(parent.delta).toBe(249);
+        });
+      });
+
+      it('throws an exception when key is omitted', function () {
+        child.stop();
+        setupCheck();
+
+        expect(function () { parent.backfill(undefined, 110, 190); }).toThrow('You must specify a key for this Sample.');
+      });
+
+      it('throws an exception when startedAt is omitted', function () {
+        child.stop();
+        setupCheck();
+
+        expect(function () { parent.backfill('backfill', undefined, 190); }).toThrow('You must specify a startedAt for this Sample[backfill].');
+      });
+
+      it('throws an exception when stoppedAt is omitted', function () {
+        child.stop();
+        setupCheck();
+
+        expect(function () { parent.backfill('backfill', 110, undefined); }).toThrow('You must specify a stoppedAt for this Sample[backfill].');
+      });
+
+      it('calls onError() if the parent is not stopped', function () {
+        var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent] must be stopped to backfill with key[backfill].');
+
+        parent.backfill('backfill', 110, 190);
+        
+        expect(sampleOnError).toHaveBeenCalled();
       });
     });
   });
@@ -587,11 +768,11 @@ describe('yerf()', function () {
     });
 
     it('throws an exception if no subscriber is passed in', function () {
-      expect(function(){ yerf().on('fullKey', 'event', undefined); }).toThrow('You must specify a subscriber for yerf().on().');
+      expect(function(){ yerf().on('fullKey', 'event', undefined); }).toThrow('You must specify a subscriber function for yerf().on().');
     });
 
     it('throws an exception if subscriber is not a function', function () {
-      expect(function(){ yerf().on('fullKey', 'event', {}); }).toThrow('Subscriber must be a function.');
+      expect(function(){ yerf().on('fullKey', 'event', {}); }).toThrow('You must specify a subscriber function for yerf().on().');
     });
   });
 
