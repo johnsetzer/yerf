@@ -717,8 +717,30 @@ describe('yerf()', function () {
         var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent] must be stopped to backfill with key[backfill].');
 
         parent.backfill('backfill', 110, 190);
-        
+
         expect(sampleOnError).toHaveBeenCalled();
+      });
+    });
+
+    describe('beforeReport', function () {
+      it('gets called before _reportToKivi', function () {
+        var beforeReportCalled = false;
+        
+        var sample = new (yerf().Sample)('sample');
+        
+        sample.beforeReport = function () {
+          beforeReportCalled = true;
+        }
+
+        var beforeReportSpy = spyOn(sample, 'beforeReport').andCallThrough();
+        var reportToKiviSpy = spyOn(sample, '_reportToKivi').andCallFake(function () {
+          expect(beforeReportCalled).toBe(true);
+        });
+        
+        sample.start().stop();
+        
+        expect(beforeReportSpy).toHaveBeenCalled();
+        expect(reportToKiviSpy).toHaveBeenCalled();
       });
     });
   });
