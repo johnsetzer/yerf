@@ -2,12 +2,14 @@
 yerf is a Javascript client side library designed to measure the runtime of programmer defined events and report them back to the server.  It features a jQuery-like syntax as well as a waterfall view for analyzing data.
 
 #Design Rational
-- Light implementation that can be inlined at the beginning of a document's head with little performance overhead.
+- Light implementation that can be inlined at the end of a document's head with little performance overhead.
 - jQuery like syntax for ease of use
 - Namespaced events
 - Every sample is a key/value pair that can easily be injected into any tool.
 - A Sample with a given key can only be recorded once to ease logistics and to keep one client from skewing results by reporting an event many times.
 - Total missuses of the yerf, such as forgetting a required parameter, will throw an exception; but subtle runtime errors, like stopping a sample twice, will call the onError() callback, which defaults to doing nothing unless debug mode is enabled. In which case, it logs to console.
+- Uses `performance.now()` if available. Otherwise, it gracefully falls back on `new Date()`.
+- Allows backfilling of previous events so yerf loading doesn't have to block CSS and other assets in your document head.
 
 #Samples
 Samples consist of a key, a delta, a start time, an end time, and a state.  Most sample methods return themselves so they can be chained together.
@@ -46,6 +48,10 @@ Stop events relative to a sample
 
     sample.stop('child', 'child.childOfChild');
 
+Find events child events relative to their parent
+
+    yerf('parent').find('child1').start();
+
 Samples are event emitters
 
     sample.on('start', function (sample) {});
@@ -82,6 +88,31 @@ Subscribe to and trigger events globally.
 
     yerf().on('parent.child', 'start', function (sample) {});
     yerf().trigger('parent.child', 'start', yerf('parent.child'));
+
+Get time relative to the yerf epoch. Yerf will use `performance.now()` if available, in which case the epoch is `navigationStart`.  If yerf has to use `new Date()` to get time, the epoch is relative to when yerf first loads.
+
+    yerf().getTime()
+
+Check if yerf is using `performance.now(`) and other timing goodies.
+
+    yerf().usesModernPerf
+
+You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(urlRegex, optionalKey)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit it `backfillrequest()` will use the inner most matching group as your key.
+
+    var eventStart = yerf().getTime();
+    var parent = yerf().start('parent').waterfall('child1', 'child2').start('child1');
+    parent.beforeReport = function () {
+        var eventStop = yerf().getTime();
+        parent.backfill('event', eventStart, eventStop);
+        if (yerf().usesModernPerf) {
+          parent.backfill('navigationStart', 0, parent.startedAt);
+        }
+        parent.backfillRequest(/.*\/(\w*).js/);
+        parent.backfillRequest(/.*\/(\w*).css/);
+        parent.backfillRequest(/js\/(jquery.*).js/, 'jquery');
+      }
+    yerf('parent.child1').stop();
+
 
 yerf outsources posting data to a remote server to the [kivi](https://github.com/johnsetzer/kivi) library.  You need to include both the `kivi` and the `yerf` source in your HTML page and then configure these `kivi` properties.
 

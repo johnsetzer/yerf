@@ -2,7 +2,7 @@
   "name": "yerf"
 , "description": "Javascript benchmarking and reporting framework for browsers."
 , "author": "John Setzer"
-, "version": "0.0.2"
+, "version": "0.0.3"
 , "repository": {
     "type": "git"
   , "url": "git@github.com:johnsetzer/yerf.git"
