@@ -446,6 +446,18 @@ describe('yerf()', function () {
         expect(dep2.state).toBe('stopped');
       });
 
+      it('sets its stoppedAt time to be the stoppedAt time of the last dependency', function () {
+        mockGetTime(100, 100, 200, 300, 400);
+        var sample = new (yerf().Sample)('test');
+
+        sample.waterfall('dep1', 'dep2');
+        var dep1 = new (yerf().Sample)('test.dep1').start().stop();
+        var dep2 = new (yerf().Sample)('test.dep2').start().stop();
+        
+        expect(dep2.stoppedAt).toBe(400);  // Sanity check
+        expect(sample.stoppedAt).toBe(400);// The test
+      });
+
       it('sets the offsets of its children', function () {
         mockGetTime(10, 20, 30);
         var sample = new (yerf().Sample)('test');
@@ -459,7 +471,7 @@ describe('yerf()', function () {
       });
 
       it('only reports values to kivi when all the dependencies are finished', function () {
-        mockGetTime(1, 10, 20, 30, 50, 60);
+        mockGetTime(1, 10, 20, 30, 50);
         var kiviSpy =  spyOn(kivi, 'set');
 
         var sample = new (yerf().Sample)('test');
@@ -482,7 +494,7 @@ describe('yerf()', function () {
         expect(kiviSpy.calls.length).toBe(6);
         
         expect(kiviSpy.calls[0].args[0]).toBe('yerf.delta.test');
-        expect(kiviSpy.calls[0].args[1]).toBe(59);
+        expect(kiviSpy.calls[0].args[1]).toBe(49);
         expect(kiviSpy.calls[1].args[0]).toBe('yerf.offset.test');
         expect(kiviSpy.calls[1].args[1]).toBe(0);
 
@@ -507,14 +519,14 @@ describe('yerf()', function () {
       });
 
       it('handles three levels of nesting', function () {
-        mockGetTime(1, 100, 100, 150, 160, 200, 200, 500, 500, 550, 560, 600, 600, 600);
+        mockGetTime(1, 100, 100, 150, 160, 200, 500, 500, 550, 560, 600);
         var root = yerf().create('root').waterfall('dep1', 'dep2');
-        var dep1 = yerf().create('root.dep1').waterfall('dep1', 'dep2').start('dep1', 'dep2');
-        var dep1dep1 = yerf('root.dep1.dep1').stop();
-        var dep1dep2 = yerf('root.dep1.dep2').stop();
-        var dep2 = yerf().create('root.dep2').waterfall('dep1', 'dep2').start('dep1', 'dep2');
-        var dep2dep1 = yerf('root.dep2.dep1').stop();
-        var dep2dep2 = yerf('root.dep2.dep2').stop();
+        var dep1 = yerf().create('root.dep1').waterfall('dep1', 'dep2').start('dep1', 'dep2'); // 100 - 200
+        var dep1dep1 = yerf('root.dep1.dep1').stop(); // 100 - 150
+        var dep1dep2 = yerf('root.dep1.dep2').stop(); // 160 - 200
+        var dep2 = yerf().create('root.dep2').waterfall('dep1', 'dep2').start('dep1', 'dep2'); // 500 - 600
+        var dep2dep1 = yerf('root.dep2.dep1').stop(); // 500 - 550
+        var dep2dep2 = yerf('root.dep2.dep2').stop(); // 560 - 600
 
         expect(root.offset).toBe(0);
         expect(dep1.offset).toBe(99);
@@ -599,50 +611,50 @@ describe('yerf()', function () {
       };
       
       beforeEach(function () {
-        mockGetTime(50, 100, 100, 105, 150, 200, 200, 200);
+        mockGetTime(50, 100, 100, 105, 150, 200);
 
-        grandParent = new (yerf().Sample)('grandParent');
-        grandParent.waterfall('parent', 'uncle');
+        grandParent = new (yerf().Sample)('grandParent'); // 50 - 200
+        grandParent.waterfall('parent', 'uncle'); 
 
-        uncle = grandParent.start('uncle').find('uncle');
+        uncle = grandParent.start('uncle').find('uncle'); // 100 - 105
 
-        parent = grandParent.start('parent').find('parent');
+        parent = grandParent.start('parent').find('parent'); // 100 - 200
         parent.waterfall('child', 'child');
 
         uncle.stop();
 
-        child = parent.start('child').find('child');
+        child = parent.start('child').find('child'); // 150 - 200
       });
 
-      // it('adds the sample to the parent', function () {
-      //   child.stop();
-      //   setupCheck();
+      it('adds the sample to the parent', function () {
+        child.stop();
+        setupCheck();
 
-      //   var result = parent.backfill('backfill', 110, 190);
-      //   var backfill = parent.find('backfill');
-      //   expect(result).toBe(parent);
+        var result = parent.backfill('backfill', 110, 190);
+        var backfill = parent.find('backfill');
+        expect(result).toBe(parent);
 
-      //   expect(backfill.parent).toBe(parent);
-      //   expect(parent.children.backfill).toBe(backfill);
-      //   expect(backfill.key).toBe('grandParent.parent.backfill');
-      //   expect(backfill.startedAt).toBe(110);
-      //   expect(backfill.stoppedAt).toBe(190);
-      //   expect(backfill.delta).toBe(80);
-      //   expect(backfill.state).toBe('stopped');
-      // });
+        expect(backfill.parent).toBe(parent);
+        expect(parent.children.backfill).toBe(backfill);
+        expect(backfill.key).toBe('grandParent.parent.backfill');
+        expect(backfill.startedAt).toBe(110);
+        expect(backfill.stoppedAt).toBe(190);
+        expect(backfill.delta).toBe(80);
+        expect(backfill.state).toBe('stopped');
+      });
 
-      // describe('when start and stop are between the parent\'s start and stop', function () {
-      //   it('does not change the start times or offsets', function () {
-      //     child.stop();
-      //     setupCheck();
+      describe('when start and stop are between the parent\'s start and stop', function () {
+        it('does not change the start times or offsets', function () {
+          child.stop();
+          setupCheck();
 
-      //     var result = parent.backfill('backfill', 110, 190);
-      //     expect(result).toBe(parent);
+          var result = parent.backfill('backfill', 110, 190);
+          expect(result).toBe(parent);
 
-      //     // Parent and children are unchanged
-      //     setupCheck();
-      //   });
-      // });
+          // Parent and children are unchanged
+          setupCheck();
+        });
+      });
 
       describe('when start is before grand parent start', function () {
         it('propagates start changes up the parent tree and changes children offsets', function () {
