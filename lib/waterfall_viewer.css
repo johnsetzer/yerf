@@ -1,9 +1,27 @@
-.sample {
+#yerf-waterfall .sample {
   position: relative;
   border: 1px solid black;
+  cursor: pointer;
 }
 
-.title{
+#yerf-waterfall .collapsed {
+  display: none;
+}
+
+#yerf-waterfall .collapse-button {
+  border: 1px solid black;
+  border-radius: 2px;
+  float: right;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  height: 19px;
+  width: 19px;
+  line-height: 19px;
+  background-color: #FFFEDE;
+}
+
+#yerf-waterfall .title{
   position: relative;
   line-height: 25px;
   text-align: center;
@@ -11,58 +29,62 @@
   height: 25px;
 }
 
-.level0 {
+#yerf-waterfall .level0 {
   background: #1E9600;
 }
 
-.level1 {
+#yerf-waterfall .level1 {
   background: #35B814;
 }
 
-.level2 {
+#yerf-waterfall .level2 {
   background: #53D433;
 }
 
-.level3 {
+#yerf-waterfall .level3 {
   background: #77E85A;
 }
 
-.level4 {
+#yerf-waterfall .level4 {
   background: #A0FC88;
 }
 
-.level-expanded {
+#yerf-waterfall .level-min-width {
   background: #E5F716;
 }
 
-.back-level0 {
+#yerf-waterfall .back-level0 {
   background: #707070;
 }
 
-.back-level1 {
+#yerf-waterfall .back-level1 {
   background: #969696;
 }
 
-.back-level2 {
+#yerf-waterfall .back-level2 {
   background: #B8B8B8;
 }
 
-.back-level3 {
+#yerf-waterfall .back-level3 {
   background: #E8E8E8;
 }
 
-.back-level4 {
+#yerf-waterfall .back-level4 {
   background: #FAFAFA;
 }
 
-.browser {
+#yerf-waterfall .browser {
   background: #DAEEF2;
   border: 1px solid black;
 }
 
-.browser div.browser-title {
+#yerf-waterfall .browser div.browser-title {
   background: #00BEE8;
   border: 1px solid black;
+  line-height: 25px;
+  text-align: center;
+  border: 1px solid black;
+  height: 25px;
 }
 
 #yerf-waterfall {
@@ -79,6 +101,7 @@
   line-height: 75px;
   text-align: center;
   border: 1px solid black;
+  border-radius: 5px;
   height: 75px;
   width: 300px;
   display: inline;
