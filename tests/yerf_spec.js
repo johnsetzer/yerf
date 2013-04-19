@@ -630,7 +630,7 @@ describe('yerf()', function () {
         child.stop();
         setupCheck();
 
-        var result = parent.backfill('backfill', 110, 190);
+        var result = parent.backfill(undefined, 'backfill', 110, 190);
         var backfill = parent.find('backfill');
         expect(result).toBe(parent);
 
@@ -640,15 +640,90 @@ describe('yerf()', function () {
         expect(backfill.startedAt).toBe(110);
         expect(backfill.stoppedAt).toBe(190);
         expect(backfill.delta).toBe(80);
+        expect(backfill.offset).toBe(10);
         expect(backfill.state).toBe('stopped');
       });
+
+      describe('when parentKey is specified', function () {
+        it('creates a parentKey and adds the sample to the parentKey', function () {
+          child.stop();
+          setupCheck();
+
+          var result = parent.backfill('parentKey', 'backfill', 110, 190);
+          var parentKey = parent.find('parentKey');
+          var backfill = parentKey.find('backfill');
+          expect(result).toBe(parent);
+
+          expect(parentKey.parent).toBe(parent);
+          expect(parent.children.parentKey).toBe(parentKey);
+          expect(parentKey.key).toBe('grandParent.parent.parentKey');
+          expect(parentKey.startedAt).toBe(110);
+          expect(parentKey.stoppedAt).toBe(190);
+          expect(parentKey.delta).toBe(80);
+          expect(parentKey.offset).toBe(10);
+          expect(parentKey.state).toBe('stopped');
+
+          expect(backfill.parent).toBe(parentKey);
+          expect(parentKey.children.backfill).toBe(backfill);
+          expect(backfill.key).toBe('grandParent.parent.parentKey.backfill');
+          expect(backfill.startedAt).toBe(110);
+          expect(backfill.stoppedAt).toBe(190);
+          expect(backfill.delta).toBe(80);
+          expect(backfill.offset).toBe(0);
+          expect(backfill.state).toBe('stopped');
+        });
+      
+        describe('when backfill is called twice', function () {
+          it('uses the existing parentKey', function () {
+            child.stop();
+            setupCheck();
+
+            var result = parent.backfill('parentKey', 'backfill', 110, 190);
+            var parentKey = parent.find('parentKey');
+            var backfill = parentKey.find('backfill');
+            expect(result).toBe(parent);
+
+            var result2 = parent.backfill('parentKey', 'backfill2', 105, 200);
+            var backfill2 = parentKey.find('backfill2');
+            expect(result2).toBe(parent);
+
+            expect(parentKey.parent).toBe(parent);
+            expect(parent.children.parentKey).toBe(parentKey);
+            expect(parentKey.key).toBe('grandParent.parent.parentKey');
+            expect(parentKey.startedAt).toBe(105);
+            expect(parentKey.stoppedAt).toBe(200);
+            expect(parentKey.delta).toBe(95);
+            expect(parentKey.offset).toBe(5);
+            expect(parentKey.state).toBe('stopped');
+
+            expect(backfill.parent).toBe(parentKey);
+            expect(parentKey.children.backfill).toBe(backfill);
+            expect(backfill.key).toBe('grandParent.parent.parentKey.backfill');
+            expect(backfill.startedAt).toBe(110);
+            expect(backfill.stoppedAt).toBe(190);
+            expect(backfill.delta).toBe(80);
+            expect(backfill.offset).toBe(5);
+            expect(backfill.state).toBe('stopped');
+
+            expect(backfill2.parent).toBe(parentKey);
+            expect(parentKey.children.backfill2).toBe(backfill2);
+            expect(backfill2.key).toBe('grandParent.parent.parentKey.backfill2');
+            expect(backfill2.startedAt).toBe(105);
+            expect(backfill2.stoppedAt).toBe(200);
+            expect(backfill2.delta).toBe(95);
+            expect(backfill2.offset).toBe(0);
+            expect(backfill2.state).toBe('stopped');
+          });
+        });
+      });
+
 
       describe('when start and stop are between the parent\'s start and stop', function () {
         it('does not change the start times or offsets', function () {
           child.stop();
           setupCheck();
 
-          var result = parent.backfill('backfill', 110, 190);
+          var result = parent.backfill(undefined, 'backfill', 110, 190);
           expect(result).toBe(parent);
 
           // Parent and children are unchanged
@@ -661,7 +736,7 @@ describe('yerf()', function () {
           child.stop();
           setupCheck();
 
-          var result = parent.backfill('backfill', 0, 199);
+          var result = parent.backfill(undefined, 'backfill', 0, 199);
           var backfill = parent.find('backfill');
           expect(result).toBe(parent);
 
@@ -699,7 +774,7 @@ describe('yerf()', function () {
           child.stop();
           setupCheck();
 
-          var result = parent.backfill('backfill', 75, 199);
+          var result = parent.backfill(undefined, 'backfill', 75, 199);
           var backfill = parent.find('backfill');
           expect(result).toBe(parent);
 
@@ -731,7 +806,7 @@ describe('yerf()', function () {
           child.stop();
           setupCheck();
 
-          var result = parent.backfill('backfill', 160, 250);
+          var result = parent.backfill(undefined, 'backfill', 160, 250);
           var backfill = parent.find('backfill');
           expect(result).toBe(parent);
 
@@ -763,7 +838,7 @@ describe('yerf()', function () {
           child.stop();
           setupCheck();
 
-          var result = parent.backfill('backfill', 1, 250);
+          var result = parent.backfill(undefined, 'backfill', 1, 250);
           var backfill = parent.find('backfill');
           expect(result).toBe(parent);
 
@@ -796,31 +871,71 @@ describe('yerf()', function () {
         });
       });
 
+      describe('when the sample has no children', function () {
+        it('creates a children object', function () {
+          yerf().clear();
+          getTimeSpy.restore('getTime');
+          mockGetTime(50, 75);
+
+          var noChildrenParent = new (yerf().Sample)('noChildrenParent'); // 50 - 75
+          noChildrenParent.start().stop();
+
+          var result = noChildrenParent.backfill(undefined, 'child', 100, 175);
+          expect(result).toBe(noChildrenParent);
+
+          var child = noChildrenParent.find('child');
+
+          expect(noChildrenParent.stoppedAt).toBe(175);
+          expect(noChildrenParent.children.child).toBe(child);
+
+          expect(child.delta).toBe(75);
+          expect(child.offset).toBe(50);
+          expect(child.startedAt).toBe(100);
+          expect(child.stoppedAt).toBe(175);
+          expect(child.parent).toBe(noChildrenParent);
+          expect(child.children).toBe(undefined);
+          expect(child.waitingFor).toBe(undefined);
+          expect(child.state).toBe('stopped');
+        });
+      });
+
       it('throws an exception when key is omitted', function () {
         child.stop();
         setupCheck();
 
-        expect(function () { parent.backfill(undefined, 110, 190); }).toThrow('You must specify a key for this Sample.');
+        expect(function () { parent.backfill(undefined, undefined, 110, 190); }).toThrow('You must specify a key for this Sample.');
       });
 
       it('throws an exception when startedAt is omitted', function () {
         child.stop();
         setupCheck();
 
-        expect(function () { parent.backfill('backfill', undefined, 190); }).toThrow('You must specify a startedAt for this Sample[backfill].');
+        expect(function () { parent.backfill(undefined, 'backfill', undefined, 190); }).toThrow('You must specify a startedAt for this Sample[backfill].');
       });
 
       it('throws an exception when stoppedAt is omitted', function () {
         child.stop();
         setupCheck();
 
-        expect(function () { parent.backfill('backfill', 110, undefined); }).toThrow('You must specify a stoppedAt for this Sample[backfill].');
+        expect(function () { parent.backfill(undefined, 'backfill', 110, undefined); }).toThrow('You must specify a stoppedAt for this Sample[backfill].');
       });
 
       it('calls onError() if the parent is not stopped', function () {
         var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent] must be stopped to backfill with key[backfill].');
 
-        var result = parent.backfill('backfill', 110, 190);
+        var result = parent.backfill(undefined, 'backfill', 110, 190);
+        expect(result).toBe(parent);
+
+        expect(sampleOnError).toHaveBeenCalled();
+      });
+
+      it('calls onError() if the parent[key] is already defined', function () {
+        child.stop();
+        setupCheck();
+
+        var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent.child] already exists.');
+
+        var result = parent.backfill(undefined, 'child', 110, 190);
         expect(result).toBe(parent);
 
         expect(sampleOnError).toHaveBeenCalled();
@@ -828,45 +943,15 @@ describe('yerf()', function () {
     });
 
     describe('backfillRequest', function () {
-      describe('when a key is provided', function () {
-        it('searches GetEntries for a matching request to backfill and uses provided key', function () {
+      describe('when webkitGetEntries is mocked', function () {
+        var sample, perfSpy;
+          
+        beforeEach(function () {
           mockGetTime(100, 200);
           
-          var sample = new (yerf().Sample)('sample');
+          sample = new (yerf().Sample)('sample');
 
-          var perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
-            return [
-              {
-                name: 'http://www.server.com/assets/19/action'
-              , startTime: 50
-              , duration: 60
-              }
-            ];
-          });
-          
-          sample.start().stop();
-          var result = sample.backfillRequest(/action/, 'backfill');
-          expect(result).toBe(sample);
-          
-          expect(yerf().usesModernPerf).toBe(true);
-          expect(perfSpy).toHaveBeenCalled();
-
-          var action = sample.children.backfill;
-          expect(action.parent).toBe(sample);
-          expect(action.key).toBe('sample.backfill');
-          expect(action.startedAt).toBe(50);
-          expect(action.stoppedAt).toBe(110);
-          expect(action.delta).toBe(60);
-        });
-      });
-
-      describe('when a key is not provided', function () {
-        it('searches GetEntries for a matching request to backfill and uses inner most matching group as key', function () {
-          mockGetTime(100, 200);
-          
-          var sample = new (yerf().Sample)('sample');
-
-          var perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
+          perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
             return [
               {
                 name: 'http://www.server.com/assets/19/action.json'
@@ -875,20 +960,67 @@ describe('yerf()', function () {
               }
             ];
           });
-          
-          sample.start().stop();
-          var result = sample.backfillRequest(/(assets.*(action)).json/);
-          expect(result).toBe(sample);
-          
-          expect(yerf().usesModernPerf).toBe(true);
-          expect(perfSpy).toHaveBeenCalled();
+        });
 
-          var action = sample.children.action;
-          expect(action.parent).toBe(sample);
-          expect(action.key).toBe('sample.action');
-          expect(action.startedAt).toBe(50);
-          expect(action.stoppedAt).toBe(110);
-          expect(action.delta).toBe(60);
+        describe('when a key is provided', function () {
+          it('searches GetEntries for a matching request to backfill and uses provided key', function () {
+            sample.start().stop();
+            var result = sample.backfillRequest(/action/, undefined, 'backfill');
+            expect(result).toBe(sample);
+            
+            expect(yerf().usesModernPerf).toBe(true);
+            expect(perfSpy).toHaveBeenCalled();
+
+            var action = sample.children.backfill;
+            expect(action.parent).toBe(sample);
+            expect(action.key).toBe('sample.backfill');
+            expect(action.startedAt).toBe(50);
+            expect(action.stoppedAt).toBe(110);
+            expect(action.delta).toBe(60);
+          });
+        });
+
+        describe('when the parentKey and the key are provided', function () {
+          it('searches GetEntries for a matching request to backfill and uses provided key', function () {
+            sample.start().stop();
+            var result = sample.backfillRequest(/action/, 'parentKey', 'backfill');
+            expect(result).toBe(sample);
+            
+            expect(yerf().usesModernPerf).toBe(true);
+            expect(perfSpy).toHaveBeenCalled();
+
+            var parent = sample.children.parentKey;
+            expect(parent.parent).toBe(sample);
+            expect(parent.key).toBe('sample.parentKey');
+            expect(parent.startedAt).toBe(50);
+            expect(parent.stoppedAt).toBe(110);
+            expect(parent.delta).toBe(60);
+
+            var action = parent.children.backfill;
+            expect(action.parent).toBe(parent);
+            expect(action.key).toBe('sample.parentKey.backfill');
+            expect(action.startedAt).toBe(50);
+            expect(action.stoppedAt).toBe(110);
+            expect(action.delta).toBe(60);
+          });
+        });
+
+        describe('when a key is not provided', function () {
+          it('searches GetEntries for a matching request to backfill and uses inner most matching group as key', function () {
+            sample.start().stop();
+            var result = sample.backfillRequest(/(assets.*(action)).json/);
+            expect(result).toBe(sample);
+            
+            expect(yerf().usesModernPerf).toBe(true);
+            expect(perfSpy).toHaveBeenCalled();
+
+            var action = sample.children.action;
+            expect(action.parent).toBe(sample);
+            expect(action.key).toBe('sample.action');
+            expect(action.startedAt).toBe(50);
+            expect(action.stoppedAt).toBe(110);
+            expect(action.delta).toBe(60);
+          });
         });
       });
 
@@ -902,7 +1034,7 @@ describe('yerf()', function () {
           var perfSpy = spyOn(yerf(), 'usesModernPerf').andReturn(false);
           
           sample.start().stop();
-          var result = sample.backfillRequest(/action/, 'backfill');
+          var result = sample.backfillRequest(/action/, undefined, 'backfill');
           expect(result).toBe(sample);
 
           var action = sample.children.backfill;

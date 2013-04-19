@@ -26,11 +26,11 @@
       var feedSample = yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
       feedSample.beforeReport = function () {
         if (yerf().usesModernPerf) {
-          feedSample.backfill('navigationStart', 0, feedSample.startedAt);
+          feedSample.backfill(undefined, 'navigationStart', 0, feedSample.startedAt);
         }
-        feedSample.backfillRequest(/.*\/(\w*).js/);
-        feedSample.backfillRequest(/.*\/(\w*).css/);
-        feedSample.backfillRequest(/js\/(jquery.*).js/, 'jquery');
+        feedSample.backfillRequest(/.*\/(\w*).js/, 'js');
+        feedSample.backfillRequest(/.*\/(\w*).css/, 'css');
+        feedSample.backfillRequest(/js\/(jquery.*).js/, 'js', 'jquery');
       }
       yerf().start('feed.head').waterfall('blockingJs', 'done');
       yerf('feed').start('windowOnLoad', 'documentReady', 'jqReady');
