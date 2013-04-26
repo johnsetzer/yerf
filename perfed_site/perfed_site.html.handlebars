@@ -32,6 +32,10 @@
         feedSample.backfillRequest(/.*\/(\w*).css/, 'css');
         feedSample.backfillRequest(/js\/(jquery.*).js/, 'js', 'jquery');
       }
+      feedSample.on('stop', function () {
+        console.log('called');
+        yerf().render();
+      })
       yerf().start('feed.head').waterfall('blockingJs', 'done');
       yerf('feed').start('windowOnLoad', 'documentReady', 'jqReady');
       window.onload = function () {

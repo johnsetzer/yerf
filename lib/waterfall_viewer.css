@@ -1,6 +1,5 @@
 #yerf-waterfall .sample {
   position: relative;
-  border: 1px solid black;
   cursor: pointer;
 }
 
@@ -8,83 +7,37 @@
   display: none;
 }
 
-#yerf-waterfall .collapse-button {
-  border: 1px solid black;
-  border-radius: 2px;
+#yerf-waterfall .collapse-arrow {
   float: right;
   position: absolute;
-  top: 2px;
-  right: 2px;
-  height: 19px;
-  width: 19px;
-  line-height: 19px;
-  background-color: #FFFEDE;
+  top: 1px;
+  right: 1px;
+  height: 18px;
+  width: 18px;
+  line-height: 18px;
+  color: rgb(80,80,80);
+  font-size: 10px;
 }
 
 #yerf-waterfall .title{
   position: relative;
-  line-height: 25px;
+  line-height: 20px;
   text-align: center;
-  border: 1px solid black;
-  height: 25px;
-}
-
-#yerf-waterfall .level0 {
-  background: #1E9600;
-}
-
-#yerf-waterfall .level1 {
-  background: #35B814;
-}
-
-#yerf-waterfall .level2 {
-  background: #53D433;
-}
-
-#yerf-waterfall .level3 {
-  background: #77E85A;
-}
-
-#yerf-waterfall .level4 {
-  background: #A0FC88;
-}
-
-#yerf-waterfall .level-min-width {
-  background: #E5F716;
-}
-
-#yerf-waterfall .back-level0 {
-  background: #707070;
-}
-
-#yerf-waterfall .back-level1 {
-  background: #969696;
-}
-
-#yerf-waterfall .back-level2 {
-  background: #B8B8B8;
-}
-
-#yerf-waterfall .back-level3 {
-  background: #E8E8E8;
-}
-
-#yerf-waterfall .back-level4 {
-  background: #FAFAFA;
+  height: 20px;
+  margin-top: 1px;
 }
 
 #yerf-waterfall .browser {
   background: #DAEEF2;
-  border: 1px solid black;
 }
 
 #yerf-waterfall .browser div.browser-title {
   background: #00BEE8;
   border: 1px solid black;
-  line-height: 25px;
+  line-height: 20px;
   text-align: center;
   border: 1px solid black;
-  height: 25px;
+  height: 20px;
 }
 
 #yerf-waterfall {
@@ -105,5 +58,5 @@
   height: 75px;
   width: 300px;
   display: inline;
-  padding: 25px;
+  padding: 20px;
 }
