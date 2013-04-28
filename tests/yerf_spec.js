@@ -190,4 +190,73 @@ describe('yerf()', function () {
       });
     });
   });
+
+  describe('events', function () {
+    it('calls subscribers when an event is fired', function () {
+      var sample = new (yerf().Sample)('1');
+      var fooSub1 = jasmine.createSpy();
+      var fooSub2 = jasmine.createSpy();
+      var barSub = jasmine.createSpy();
+
+      yerf().on('namespace.foo', 'start', fooSub1);
+      yerf().on('namespace.foo', 'start', fooSub2);
+      yerf().on('namespace.bar', 'start', barSub);
+
+      yerf().trigger('namespace.foo', 'start', sample);
+      
+      expect(fooSub1).toHaveBeenCalledWith(sample);
+      expect(fooSub2).toHaveBeenCalledWith(sample);
+      expect(barSub).not.toHaveBeenCalled();
+    });
+
+    it('does not call subscribers on a different event', function () {
+      var sample = new (yerf().Sample)('2');
+      var fooSub1 = jasmine.createSpy();
+      var fooSub2 = jasmine.createSpy();
+
+      yerf().on('namespace.foo', 'start', fooSub1);
+      yerf().on('namespace.foo', 'stop', fooSub2);
+
+      yerf().trigger('namespace.foo', 'start', sample);
+      
+      expect(fooSub1).toHaveBeenCalledWith(sample);
+      expect(fooSub2).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('on()', function () {
+    it('throws an exception if no fullKey is passed in', function () {
+      var sub = jasmine.createSpy();
+      expect(function(){ yerf().on(undefined, 'event', sub); }).toThrow('You must specify a fullKey for yerf().on().');
+    });
+
+    it('throws an exception if no event is passed in', function () {
+      var sub = jasmine.createSpy();
+      expect(function(){ yerf().on('fullKey', undefined, sub); }).toThrow('You must specify an event for yerf().on().');
+    });
+
+    it('throws an exception if no subscriber is passed in', function () {
+      expect(function(){ yerf().on('fullKey', 'event', undefined); }).toThrow('You must specify a subscriber function for yerf().on().');
+    });
+
+    it('throws an exception if subscriber is not a function', function () {
+      expect(function(){ yerf().on('fullKey', 'event', {}); }).toThrow('You must specify a subscriber function for yerf().on().');
+    });
+  });
+
+  describe('trigger()', function () {
+    it('throws an exception if no fullKey is passed in', function () {
+      var sub = jasmine.createSpy();
+      expect(function(){ yerf().trigger(undefined, 'event', {}); }).toThrow('You must specify a fullKey for yerf().trigger().');
+    });
+
+    it('throws an exception if no event is passed in', function () {
+      var sub = jasmine.createSpy();
+      expect(function(){ yerf().trigger('fullKey', undefined, {}); }).toThrow('You must specify an event for yerf().trigger().');
+    });
+
+    it('does not throw an exception if no object is passed in', function () {
+      expect(function(){ yerf().trigger('fullKey', 'event', undefined); }).not.toThrow();
+    });
+  });
 });
