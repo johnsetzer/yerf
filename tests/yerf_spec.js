@@ -136,7 +136,7 @@ describe('yerf()', function () {
         it('returns the time since navigation start', function () {
           yerf().usesModernPerf = true;
           mockNow(100);
-          
+
           expect(yerf().getTime()).toBe(100);
           expect(nowSpy.calls.length).toBe(1);
         });
@@ -161,7 +161,15 @@ describe('yerf()', function () {
           yerf().modernBoot = 100;
           yerf().oldBoot = 1000000;
 
-          expect(yerf().normTime(1000200)).toBe(100);
+          expect(yerf().normTime(1000200)).toBe(300);
+        });
+
+        it('forces negative times to zero', function () {
+          yerf().usesModernPerf = true;
+          yerf().modernBoot = 100;
+          yerf().oldBoot = 1000000;
+
+          expect(yerf().normTime(1)).toBe(0);
         });
       });
 
@@ -171,6 +179,13 @@ describe('yerf()', function () {
           yerf().oldBoot = 1000000;
           
           expect(yerf().normTime(1000200)).toBe(200);
+        });
+
+        it('forces negative times to zero', function () {
+          yerf().usesModernPerf = false;
+          yerf().oldBoot = 1000000;
+          
+          expect(yerf().normTime(1)).toBe(0);
         });
       });
     });

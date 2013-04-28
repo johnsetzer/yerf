@@ -1015,6 +1015,73 @@ describe('yerf().Sample', function () {
     });
   });
 
+  describe('normalizedBackfill', function () {
+    var oldUsesModernPerf;
+    var oldModernBoot;
+    var oldOldBoot;
+
+    beforeEach(function () {
+      oldUsesModernPerf = yerf().usesModernPerf;
+      oldModernBoot = yerf().modernBoot;
+      oldOldBoot = yerf().oldBoot;
+    });
+
+    afterEach(function () {
+      yerf().usesModernPerf = oldUsesModernPerf;
+      yerf().modernBoot = oldModernBoot;
+      yerf().oldBoot = oldOldBoot;
+    });
+
+    it('converts unix times to yerf times and does a backfill', function () {
+      yerf().usesModernPerf = true;
+      yerf().modernBoot = 100;
+      yerf().oldBoot = 1000000;
+      mockGetTime(100, 200);
+
+      var sample = new (yerf().Sample)('sample');
+      sample.start().stop();
+
+      var backfillSpy = spyOn(sample, 'backfill').andCallThrough();
+      
+      var result = sample.normalizedBackfill('parent', 'backfill', 1000500, 1000600);
+      expect(result).toBe(sample);
+
+      // it delegates the heavy lifting to backfill()
+      expect(backfillSpy).toHaveBeenCalledWith('parent', 'backfill', 600, 700);
+
+      // Redundant sanity checking
+      var parent = yerf('sample.parent');
+      var backfill = yerf('sample.parent.backfill');
+
+      expect(result.children.parent).toBe(parent);
+      
+      expect(parent.startedAt).toBe(600);
+      expect(parent.stoppedAt).toBe(700);
+      expect(parent.delta).toBe(100);
+      expect(parent.parent).toBe(result);
+      expect(parent.children.backfill).toBe(backfill);
+
+      expect(backfill.startedAt).toBe(600);
+      expect(backfill.stoppedAt).toBe(700);
+      expect(backfill.delta).toBe(100);
+      expect(backfill.parent).toBe(parent);
+    });
+
+    it('throws an exception when startedAt is omitted', function () {
+      var sample = new (yerf().Sample)('sample');
+      sample.start().stop();
+
+      expect(function () { sample.normalizedBackfill(undefined, 'backfill', undefined, 190); }).toThrow('You must specify a startedAt for this Sample[backfill].');
+    });
+
+    it('throws an exception when stoppedAt is omitted', function () {
+      var sample = new (yerf().Sample)('sample');
+      sample.start().stop();
+
+      expect(function () { sample.normalizedBackfill(undefined, 'backfill', 110, undefined); }).toThrow('You must specify a stoppedAt for this Sample[backfill].');
+    });
+  });
+
   describe('beforeReport', function () {
     it('gets called before _reportToKivi', function () {
       var beforeReportCalled = false;
