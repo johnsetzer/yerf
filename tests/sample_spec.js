@@ -195,13 +195,12 @@ describe('yerf().Sample', function () {
         expect(sample.children['dep2']).toBe(yerf('test.dep2'));
       });
 
-      it('calls onError() if you try to start an event that it is not waiting for', function () {
+      it('starts and add events to the waterfall list if the event is not on the waterfall list', function () {
         var sample = new (yerf().Sample)('test');
+        sample.waterfall('dep1', 'dep2');
 
-        var sampleOnError = expectOnError(sample, 'Cannot start a child[not_waiting_for] you are not waiting for.');
-        sample.waterfall('dep1', 'dep2', 'dep3');
-        expect(sample.start('not_waiting_for')).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(sample.start('dep1', 'not_waiting_for', 'dep2')).toBe(sample);
+        expect(yerf('test.not_waiting_for').state).toBe('started');
       });
     });
   });
