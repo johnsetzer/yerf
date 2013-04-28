@@ -931,7 +931,7 @@ describe('yerf().Sample', function () {
       describe('when a key is provided', function () {
         it('searches GetEntries for a matching request to backfill and uses provided key', function () {
           sample.start().stop();
-          var result = sample.backfillRequest(/action/, undefined, 'backfill');
+          var result = sample.backfillRequest(undefined, 'backfill', /action/);
           expect(result).toBe(sample);
           
           expect(yerf().usesModernPerf).toBe(true);
@@ -949,7 +949,7 @@ describe('yerf().Sample', function () {
       describe('when the parentKey and the key are provided', function () {
         it('searches GetEntries for a matching request to backfill and uses provided key', function () {
           sample.start().stop();
-          var result = sample.backfillRequest(/action/, 'parentKey', 'backfill');
+          var result = sample.backfillRequest('parentKey', 'backfill', /action/);
           expect(result).toBe(sample);
           
           expect(yerf().usesModernPerf).toBe(true);
@@ -974,7 +974,7 @@ describe('yerf().Sample', function () {
       describe('when a key is not provided', function () {
         it('searches GetEntries for a matching request to backfill and uses inner most matching group as key', function () {
           sample.start().stop();
-          var result = sample.backfillRequest(/(assets.*(action)).json/);
+          var result = sample.backfillRequest(undefined, undefined, /(assets.*(action)).json/);
           expect(result).toBe(sample);
           
           expect(yerf().usesModernPerf).toBe(true);
@@ -1000,7 +1000,7 @@ describe('yerf().Sample', function () {
         var perfSpy = spyOn(yerf(), 'usesModernPerf').andReturn(false);
         
         sample.start().stop();
-        var result = sample.backfillRequest(/action/, undefined, 'backfill');
+        var result = sample.backfillRequest(undefined, 'backfill', /action/);
         expect(result).toBe(sample);
 
         var action = sample.children.backfill;
