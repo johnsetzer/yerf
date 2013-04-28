@@ -2,7 +2,7 @@
 <html>
   <head>
     <script type="text/javascript">
-    var epoch = new Date().getTime();
+      var epoch = new Date().getTime();
       var getTime = function () {
         if(performance && performance.now) {
           return performance.now();
@@ -28,9 +28,9 @@
         if (yerf().usesModernPerf) {
           feedSample.backfill(undefined, 'navigationStart', 0, feedSample.startedAt);
         }
-        feedSample.backfillRequest(/.*\/(\w*).js/, 'js');
-        feedSample.backfillRequest(/.*\/(\w*).css/, 'css');
-        feedSample.backfillRequest(/js\/(jquery.*).js/, 'js', 'jquery');
+        feedSample.backfillRequest('js', undefined, /.*\/(\w*).js/);
+        feedSample.backfillRequest('css', undefined, /.*\/(\w*).css/);
+        feedSample.backfillRequest('js', 'jquery', /js\/(jquery.*).js/);
       }
       feedSample.on('stop', function () {
         console.log('called');

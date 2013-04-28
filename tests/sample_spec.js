@@ -909,12 +909,20 @@ describe('yerf().Sample', function () {
 
   describe('backfillRequest', function () {
     describe('when webkitGetEntries is mocked', function () {
-      var sample, perfSpy;
+      var sample, perfSpy, oldUsesModernPerf;
         
       beforeEach(function () {
         mockGetTime(100, 200);
         
         sample = new (yerf().Sample)('sample');
+
+        if (!window.performance) {
+          window.performance = {};
+        }
+
+        if (!window.performance.webkitGetEntries) {
+          window.performance.webkitGetEntries = function () {};
+        }
 
         perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
           return [
@@ -925,6 +933,13 @@ describe('yerf().Sample', function () {
             }
           ];
         });
+
+        oldUsesModernPerf = yerf().usesModernPerf;
+        yerf().usesModernPerf = true;
+      });
+
+      afterEach(function () {
+        yerf().usesModernPerf = oldUsesModernPerf;
       });
 
       describe('when a key is provided', function () {
