@@ -1,11 +1,5 @@
-var expectOnError = function (sample, expectedErrorMsg) {
-  var sampleOnError = spyOn(sample, 'onError').andCallFake(function (error) {
-    expect(error.message).toBe(expectedErrorMsg);
-  });
-  return sampleOnError;
-}
+describe('yerf()', function () {
 
-describe('yerf()', function () {  
   beforeEach(function () {
     kivi.clear();
     yerf().clear(); 
@@ -53,10 +47,10 @@ describe('yerf()', function () {
     describe('when a fullKey is passed in', function () {
       it('calls onError() if the sample already exists', function () {
         var sample = new (yerf().Sample)('test');
-        var sampleOnError = expectOnError(yerf().Sample.prototype, 'Sample[test] already exists.');
+        var onErrorSpy = expectOnError('Sample[test] already exists.');
 
         expect(yerf().create('test')).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
       });
 
       it('returns a new sample if the sample does not exist', function () {
@@ -77,9 +71,9 @@ describe('yerf()', function () {
       it('calls onError() if the sample already exists', function () {
         var sample = new (yerf().Sample)('test');
 
-        var sampleOnError = expectOnError(yerf().Sample.prototype, 'Sample[test] already exists.');
+        var onErrorSpy = expectOnError('Sample[test] already exists.');
         expect(yerf().start('test')).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
       });
 
       it('returns a new sample if the sample does not exist and starts it', function () {

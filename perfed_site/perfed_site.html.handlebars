@@ -10,20 +10,24 @@
           return new Date().getTime() - epoch;
         }
       };
+
+      // Measure kivi load time
       var kiviStart = getTime();
       {{{kivi}}}
       var kiviEnd = getTime();
-      console.log('kivi delta = ' + (kiviEnd - kiviStart));
-    </script>
-    <script type="text/javascript">
+
+      // Measure yerf load time
       var yerfStart = getTime();
       {{{yerf}}}
       var yerfEnd = getTime();
-      console.log('yerf delta = ' + (yerfEnd - yerfStart));
-      console.log('NOW', getTime());
-    </script>
-    <script type="text/javascript">
+
+      kivi.log('kivi delta = ' + (kiviEnd - kiviStart));
+      kivi.log('yerf delta = ' + (yerfEnd - yerfStart));
+      kivi.log('NOW = ' + getTime());
+    
       var feedSample = yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
+      
+      // Backfill resource loading into feed Sample
       feedSample.beforeReport = function () {
         if (yerf().usesModernPerf) {
           feedSample.backfill(undefined, 'navigationStart', 0, feedSample.startedAt);
@@ -32,12 +36,14 @@
         feedSample.backfillRequest('css', undefined, /.*\/(\w*).css/);
         feedSample.backfillRequest('js', 'jquery', /js\/(jquery.*).js/);
       }
+
       feedSample.on('stop', function () {
-        console.log('called');
         yerf().render();
-      })
+      });
+      
       yerf().start('feed.head').waterfall('blockingJs', 'done');
       yerf('feed').start('windowOnLoad', 'documentReady', 'jqReady');
+      
       window.onload = function () {
         yerf('feed.windowOnLoad').stop();
       };
@@ -156,10 +162,13 @@
   <!-- Waterfall viewer -->
   <script type="text/javascript">
     // Report stats after 1, 2, 4 second intervals
-    kivi.config.postUrl = 'http://localhost:3000/postUrl';
+    kivi.config.postUrl = 'http://' + window.location.host + '/postUrl';
     kivi.enablePost([1000, 2000, 4000]);
     kivi.config.$ = $;
     yerf().config.viewerCssPath =  '../lib/waterfall_viewer.css';
     yerf().config.viewerJsPath =  '../lib/waterfall_viewer.js';
+
+    // Testing yerf onError
+    yerf().onError(new Error('This is a test error.  Please ignore it.'));
   </script>
 </html>

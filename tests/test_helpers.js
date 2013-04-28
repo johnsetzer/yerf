@@ -57,11 +57,11 @@ var expectSample = function (sample, key, startedAt, stoppedAt, delta) {
   expect(sample.delta).toBe(delta);
 };
 
-var expectOnError = function (sample, expectedErrorMsg) {
-  var sampleOnError = spyOn(sample, 'onError').andCallFake(function (error) {
+var expectOnError = function (expectedErrorMsg) {
+  var onErrorSpy = spyOn(yerf(), 'onError').andCallFake(function (error) {
     expect(error.message).toBe(expectedErrorMsg);
   });
-  return sampleOnError;
+  return onErrorSpy;
 }
 
 jasmine.Spy.prototype.restore = function() {

@@ -24,12 +24,12 @@ describe('yerf().Sample', function () {
 
     describe('when a second sample with the same key as the first sample is newed', function () {
       it('returns the first sample', function () {
-        var sampleOnError = expectOnError(yerf().Sample.prototype, 'Sample[test] already exists.');
+        var onErrorSpy = expectOnError('Sample[test] already exists.');
         var sample = new (yerf().Sample)('test');
-        expect(sampleOnError).not.toHaveBeenCalled();
+        expect(onErrorSpy).not.toHaveBeenCalled();
 
         expect(new (yerf().Sample)('test')).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
       });
     });
   });
@@ -161,10 +161,10 @@ describe('yerf().Sample', function () {
       describe('when the sample is already started and is started again', function () {
         it('calls onAlreadyStarted()', function () {
           var sample = new (yerf().Sample)('test');
-          var sampleOnError = expectOnError(sample, 'Sample[test] has already started.');
+          var onErrorSpy = expectOnError('Sample[test] has already started.');
           sample.start();
           expect(sample.start()).toBe(sample);
-          expect(sampleOnError).toHaveBeenCalled();
+          expect(onErrorSpy).toHaveBeenCalled();
         });
       });
     });
@@ -246,19 +246,19 @@ describe('yerf().Sample', function () {
       describe('when the sample is already stopped and is stopped again', function () {
         it('calls onError()', function () {
           var sample = new (yerf().Sample)('test');
-          var sampleOnError = expectOnError(sample, 'Sample[test] has already stopped.');
+          var onErrorSpy = expectOnError('Sample[test] has already stopped.');
           sample.start().stop();
           expect(sample.stop()).toBe(sample);
-          expect(sampleOnError).toHaveBeenCalled();
+          expect(onErrorSpy).toHaveBeenCalled();
         });
       });
 
       describe('when the sample is stopped before it is started', function () {
         it('calls onError()', function () {
           var sample = new (yerf().Sample)('test');
-          var sampleOnError = expectOnError(sample, 'Sample[test] has not been started.');
+          var onErrorSpy = expectOnError('Sample[test] has not been started.');
           expect(sample.stop()).toBe(sample);
-          expect(sampleOnError).toHaveBeenCalled();
+          expect(onErrorSpy).toHaveBeenCalled();
         });
       });
     });
@@ -282,28 +282,28 @@ describe('yerf().Sample', function () {
         sample.waterfall('dep1', 'dep2', 'dep3');
         sample.start('dep1');
 
-        var sampleOnError = expectOnError(sample, 'Cannot stop a child[not_waiting_for] that is not attached.');
+        var onErrorSpy = expectOnError('Cannot stop a child[not_waiting_for] that is not attached.');
         expect(sample.stop('not_waiting_for')).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
 
-        sampleOnError.restore('onError');
-        sampleOnError = expectOnError(sample, 'Cannot stop a child[dep2] that is not attached.');
+        onErrorSpy.restore('onError');
+        onErrorSpy = expectOnError('Cannot stop a child[dep2] that is not attached.');
         expect(sample.stop('dep2')).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
       });
     });
 
     describe('when a whole bunch of errors are chained together', function () {
       it('calls onError() for each error', function () {
         var sample = new (yerf().Sample)('test');
-        var sampleOnError = spyOn(sample, 'onError');
+        var onErrorSpy = spyOn(yerf(), 'onError');
 
         sample.start().start().waterfall('dep1').stop('wrong').stop();
 
-        expect(sampleOnError.calls.length).toBe(3);
-        expect(sampleOnError.calls[0].args[0].message).toBe('Sample[test] has already started.');
-        expect(sampleOnError.calls[1].args[0].message).toBe('Cannot stop a child[wrong] that is not attached.');
-        expect(sampleOnError.calls[2].args[0].message).toBe('Sample[test] is a waterfall and cannot be manually stopped.');
+        expect(onErrorSpy.calls.length).toBe(3);
+        expect(onErrorSpy.calls[0].args[0].message).toBe('Sample[test] has already started.');
+        expect(onErrorSpy.calls[1].args[0].message).toBe('Cannot stop a child[wrong] that is not attached.');
+        expect(onErrorSpy.calls[2].args[0].message).toBe('Sample[test] is a waterfall and cannot be manually stopped.');
       });
     });
   });
@@ -314,21 +314,21 @@ describe('yerf().Sample', function () {
       describe('and doesn\'t have any existing dependencies', function () {
         it('it can be stopped', function () {
           var sample = new (yerf().Sample)('test');
-          var sampleOnError = expectOnError(sample, 'Should not be called by test.');
+          var onErrorSpy = expectOnError('Should not be called by test.');
           expect(sample.waterfall()).toBe(sample);
-          expect(sampleOnError).not.toHaveBeenCalled();
+          expect(onErrorSpy).not.toHaveBeenCalled();
         });
       });
 
       describe('and does have existing dependencies', function () {
         it('calls onError()', function () {
           var sample = new (yerf().Sample)('test');
-          var sampleOnError = expectOnError(sample, 'Sample[test] is a waterfall and cannot be manually stopped.');
+          var onErrorSpy = expectOnError('Sample[test] is a waterfall and cannot be manually stopped.');
 
           sample.waterfall('dependency');
           sample.waterfall();
           expect(sample.stop()).toBe(sample);
-          expect(sampleOnError).toHaveBeenCalled();
+          expect(onErrorSpy).toHaveBeenCalled();
         });
       });
     });
@@ -347,11 +347,11 @@ describe('yerf().Sample', function () {
     describe('when it is already stopped', function () {
       it('calls onError()', function () {
         var sample = new (yerf().Sample)('test');
-        var sampleOnError = expectOnError(sample, 'Sample[test] has already stopped.');
+        var onErrorSpy = expectOnError('Sample[test] has already stopped.');
         sample.state = 'stopped';
 
         expect(sample.waterfall()).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
       });
     });
 
@@ -391,11 +391,11 @@ describe('yerf().Sample', function () {
     describe('when it is called with args and is stopped', function () {
       it('calls onError()', function () {
         var sample = new (yerf().Sample)('test');
-        var sampleOnError = expectOnError(sample, 'Sample[test] is a waterfall and cannot be manually stopped.');
+        var onErrorSpy = expectOnError('Sample[test] is a waterfall and cannot be manually stopped.');
 
         sample.waterfall('dep1', 'dep2');
         expect(sample.stop()).toBe(sample);
-        expect(sampleOnError).toHaveBeenCalled();
+        expect(onErrorSpy).toHaveBeenCalled();
       });
     });
 
@@ -477,10 +477,10 @@ describe('yerf().Sample', function () {
     it('calls onError() if one of its dependencies is already started', function () {
       var sample = new (yerf().Sample)('test');
       var dep1 = new (yerf().Sample)('test.dep1').start();
-      var sampleOnError = expectOnError(sample, 'Child[test.dep1] is already started.');
+      var onErrorSpy = expectOnError('Child[test.dep1] is already started.');
       
       expect(sample.waterfall('dep1', 'dep2')).toBe(sample);
-      expect(sampleOnError).toHaveBeenCalled();
+      expect(onErrorSpy).toHaveBeenCalled();
     });
 
     it('handles three levels of nesting', function () {
@@ -886,24 +886,24 @@ describe('yerf().Sample', function () {
     });
 
     it('calls onError() if the parent is not stopped', function () {
-      var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent] must be stopped to backfill with key[backfill].');
+      var onErrorSpy = expectOnError('Sample[grandParent.parent] must be stopped to backfill with key[backfill].');
 
       var result = parent.backfill(undefined, 'backfill', 110, 190);
       expect(result).toBe(parent);
 
-      expect(sampleOnError).toHaveBeenCalled();
+      expect(onErrorSpy).toHaveBeenCalled();
     });
 
     it('calls onError() if the parent[key] is already defined', function () {
       child.stop();
       setupCheck();
 
-      var sampleOnError = expectOnError(parent, 'Sample[grandParent.parent.child] already exists.');
+      var onErrorSpy = expectOnError('Sample[grandParent.parent.child] already exists.');
 
       var result = parent.backfill(undefined, 'child', 110, 190);
       expect(result).toBe(parent);
 
-      expect(sampleOnError).toHaveBeenCalled();
+      expect(onErrorSpy).toHaveBeenCalled();
     });
   });
 

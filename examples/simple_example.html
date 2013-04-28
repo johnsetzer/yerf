@@ -13,7 +13,7 @@
 
     // Report stats after 1, 2, 4 second intervals
     kivi.config.$ = $;
-    kivi.config.postUrl = 'http://localhost:3000/postUrl';
+    kivi.config.postUrl = 'http://localhost:3002/postUrl';
     kivi.enablePost([1000, 2000, 4000]);
 
     yerf().config = {
@@ -43,8 +43,6 @@
     setTimeout(function () {
       yerf('parent.child2').stop();
     }, 200);
-    
-    
   </script>
 </head>
 <body>

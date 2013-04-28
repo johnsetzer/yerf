@@ -8,6 +8,8 @@ app.engine('handlebars', consolidate.handlebars);
 app.set('views', __dirname + '/perfed_site');
 app.use(express.bodyParser());
 
+var PORT = 3002;
+
 app.get('/perfed_site/perfed_site.html', function(req, res){
 
   var kiviSrcMin = fs.readFileSync('node_modules/kivi/kivi.min.js', 'utf-8');
@@ -61,10 +63,10 @@ serveDir('/examples/');
 serveDir('/tests/');
 serveDir('/node_modules/kivi/');
 
-app.listen(3000);
+app.listen(PORT);
 
 console.log('URL:');
-console.log('http://localhost:3000/perfed_site/perfed_site.html');
-console.log('http://localhost:3000/fake_site/fake_site.html');
-console.log('http://localhost:3000/tests/test_suite.html');
-console.log('http://localhost:3000/examples/simple_example.html');
+console.log('http://localhost:' + PORT + '/perfed_site/perfed_site.html');
+console.log('http://localhost:' + PORT + '/fake_site/fake_site.html');
+console.log('http://localhost:' + PORT + '/tests/test_suite.html');
+console.log('http://localhost:' + PORT + '/examples/simple_example.html');
