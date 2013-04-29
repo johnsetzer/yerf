@@ -163,3 +163,11 @@ Samples will throw  an `Error` if you forget a required parameter. If you cause 
     yerf().Sample.prototype.onError = function(error) {
       console.log(error.message);
     };
+
+#Browser Compatibility
+yerf is tested in IE 7-10, latest Chrome, latest Firefox, and latests Safari
+
+#License
+Yerf is licensed under the Apache Version 2.0 License.
+
+http://www.apache.org/licenses/LICENSE-2.0.html
