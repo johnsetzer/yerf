@@ -108,19 +108,66 @@ describe('yerf()', function () {
     });
   });
 
+  describe('getEntries()', function () {
+    var oldPerformance, oldHasEntries;
+    var entries = [1, 2, 3];
+    
+    beforeEach(function () {
+      oldPerformance = window.performance;
+      oldHasEntries = yerf().hasEntries;
+      // Firefox won't let you replace window.performance,
+      // so this tests fails on Firefox.
+      window.performance = {};
+      yerf().hasEntries = true;
+    });
+
+    afterEach(function () {
+      window.performance = oldPerformance;
+      yerf().hasEntries = oldHasEntries;
+    });
+
+    describe('when performance.webkitGetEntries() is present', function () {
+      it('returns an entry list', function () {
+        window.performance.webkitGetEntries = function () {};
+        var perfSpy = spyOn(window.performance, 'webkitGetEntries').andReturn(entries);
+
+        expect(yerf().getEntries()).toBe(entries);
+        expect(perfSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('when performance.getEntries() is present', function () {
+      it('returns an entry list', function () {
+        window.performance.getEntries = function () {};
+        var perfSpy = spyOn(window.performance, 'getEntries').andReturn(entries);
+
+        expect(yerf().getEntries()).toBe(entries);
+        expect(perfSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('when no entry method is present', function () {
+      it('returns an empty list', function () {
+        window.performance = {};
+
+        expect(yerf().getEntries()).toEqual([]);
+      });
+    });
+  });
+
   describe('Tests that change the epoch', function () {
-    var oldUsesModernPerf;
+    var oldHasNow;
     var oldModernBoot;
     var oldOldBoot;
 
     beforeEach(function () {
-      oldUsesModernPerf = yerf().usesModernPerf;
+      oldHasNow = yerf().hasNow;
       oldModernBoot = yerf().modernBoot;
       oldOldBoot = yerf().oldBoot;
     });
 
     afterEach(function () {
-      yerf().usesModernPerf = oldUsesModernPerf;
+      yerf().hasNow = oldHasNow;
       yerf().modernBoot = oldModernBoot;
       yerf().oldBoot = oldOldBoot;
     });
@@ -128,7 +175,7 @@ describe('yerf()', function () {
     describe('getTime()', function () {
       describe('when using modern perf', function () {
         it('returns the time since navigation start', function () {
-          yerf().usesModernPerf = true;
+          yerf().hasNow = true;
           mockNow(100);
 
           expect(yerf().getTime()).toBe(100);
@@ -138,7 +185,7 @@ describe('yerf()', function () {
 
       describe('when using old perf', function () {
         it('returns the time since navigation start', function () {
-          yerf().usesModernPerf = false;
+          yerf().hasNow = false;
           yerf().oldBoot = 100;
           mockDate(300);
             
@@ -151,7 +198,7 @@ describe('yerf()', function () {
     describe('normTime()', function () {
       describe('when using modern perf', function () {
         it('converts unix time to yerf time', function () {
-          yerf().usesModernPerf = true;
+          yerf().hasNow = true;
           yerf().modernBoot = 100;
           yerf().oldBoot = 1000000;
 
@@ -159,7 +206,7 @@ describe('yerf()', function () {
         });
 
         it('forces negative times to zero', function () {
-          yerf().usesModernPerf = true;
+          yerf().hasNow = true;
           yerf().modernBoot = 100;
           yerf().oldBoot = 1000000;
 
@@ -169,14 +216,14 @@ describe('yerf()', function () {
 
       describe('when using old perf', function () {
         it('converts unix time to yerf time', function () {
-          yerf().usesModernPerf = false;
+          yerf().hasNow = false;
           yerf().oldBoot = 1000000;
           
           expect(yerf().normTime(1000200)).toBe(200);
         });
 
         it('forces negative times to zero', function () {
-          yerf().usesModernPerf = false;
+          yerf().hasNow = false;
           yerf().oldBoot = 1000000;
           
           expect(yerf().normTime(1)).toBe(0);

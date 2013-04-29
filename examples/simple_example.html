@@ -2,6 +2,7 @@
 <head>
   <title>yerf Simple Example</title>
   <script type="text/javascript" src="../dependencies/js/jquery-1.7.1.js"></script>
+  <script type="text/javascript" src="../node_modules/kivi/dependencies/js/jquery.json-2.4.js"></script>
   <script type="text/javascript" src="../dependencies/js/underscore.js"></script>
   <script type="text/javascript" src="../dependencies/js/mustache.js"></script>
   <script type="text/javascript" src="../node_modules/kivi/kivi.js"></script>
@@ -13,7 +14,7 @@
 
     // Report stats after 1, 2, 4 second intervals
     kivi.config.$ = $;
-    kivi.config.postUrl = 'http://localhost:3002/postUrl';
+    kivi.config.postUrl = 'http://' + window.location.host + '/postUrl';
     kivi.enablePost([1000, 2000, 4000]);
 
     yerf().config = {
@@ -43,6 +44,10 @@
     setTimeout(function () {
       yerf('parent.child2').stop();
     }, 200);
+
+    yerf('parent').on('stop', function () {
+      yerf().render();
+    });
   </script>
 </head>
 <body>

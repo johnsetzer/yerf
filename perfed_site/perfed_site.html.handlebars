@@ -24,6 +24,9 @@
       kivi.log('kivi delta = ' + (kiviEnd - kiviStart));
       kivi.log('yerf delta = ' + (yerfEnd - yerfStart));
       kivi.log('NOW = ' + getTime());
+      kivi.log('yerf().hasNow = ' + yerf().hasNow);
+      kivi.log('yerf().hasTiming = ' + yerf().hasTiming);
+      kivi.log('yerf().hasEntries = ' + yerf().hasEntries);
     
       var feedSample = yerf().start('feed').waterfall('head', 'windowOnLoad', 'documentReady', 'jqReady', 'deferredJs', 'counts', 'feed', 'notifications', 'partial', 'appInit');
       
@@ -54,11 +57,11 @@
 
       // Some blocking JS
       yerf().start('feed.head.blockingJs');
-      var start = Date.now();
+      var start = new Date().getTime();
       var now;
       var waitFor = 100;
       while(true) {
-        now = Date.now();
+        now = new Date().getTime();
         if(now - start >= waitFor) {
           break;
         }
@@ -147,6 +150,7 @@
       yerf('feed.jqReady').stop();
     });
   </script>
+  <script src="../node_modules/kivi/dependencies/js/jquery.json-2.4.js"></script>
   <script src="../dependencies/js/underscore.js"></script>
   <script src="../dependencies/js/backbone.js"></script>
   <script src="../dependencies/js/mustache.js"></script>

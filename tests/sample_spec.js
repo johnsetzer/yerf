@@ -908,23 +908,16 @@ describe('yerf().Sample', function () {
   });
 
   describe('backfillRequest', function () {
-    describe('when webkitGetEntries is mocked', function () {
-      var sample, perfSpy, oldUsesModernPerf;
+    describe('when getEntries() is mocked', function () {
+      var sample, perfSpy, oldHasEntries;
         
       beforeEach(function () {
         mockGetTime(100, 200);
         
         sample = new (yerf().Sample)('sample');
 
-        if (!window.performance) {
-          window.performance = {};
-        }
-
-        if (!window.performance.webkitGetEntries) {
-          window.performance.webkitGetEntries = function () {};
-        }
-
-        perfSpy = spyOn(window.performance, 'webkitGetEntries').andCallFake(function () {
+       
+        perfSpy = spyOn(yerf(), 'getEntries').andCallFake(function () {
           return [
             {
               name: 'http://www.server.com/assets/19/action.json'
@@ -934,12 +927,12 @@ describe('yerf().Sample', function () {
           ];
         });
 
-        oldUsesModernPerf = yerf().usesModernPerf;
-        yerf().usesModernPerf = true;
+        oldHasEntries = yerf().hasEntries;
+         yerf().hasEntries = true;
       });
 
       afterEach(function () {
-        yerf().usesModernPerf = oldUsesModernPerf;
+        yerf().hasEntries = oldHasEntries;
       });
 
       describe('when a key is provided', function () {
@@ -948,7 +941,7 @@ describe('yerf().Sample', function () {
           var result = sample.backfillRequest(undefined, 'backfill', /action/);
           expect(result).toBe(sample);
           
-          expect(yerf().usesModernPerf).toBe(true);
+          expect(yerf().hasEntries).toBe(true);
           expect(perfSpy).toHaveBeenCalled();
 
           var action = sample.children.backfill;
@@ -966,7 +959,7 @@ describe('yerf().Sample', function () {
           var result = sample.backfillRequest('parentKey', 'backfill', /action/);
           expect(result).toBe(sample);
           
-          expect(yerf().usesModernPerf).toBe(true);
+          expect(yerf().hasEntries).toBe(true);
           expect(perfSpy).toHaveBeenCalled();
 
           var parent = sample.children.parentKey;
@@ -991,7 +984,7 @@ describe('yerf().Sample', function () {
           var result = sample.backfillRequest(undefined, undefined, /(assets.*(action)).json/);
           expect(result).toBe(sample);
           
-          expect(yerf().usesModernPerf).toBe(true);
+          expect(yerf().hasEntries).toBe(true);
           expect(perfSpy).toHaveBeenCalled();
 
           var action = sample.children.action;
@@ -1043,24 +1036,24 @@ describe('yerf().Sample', function () {
   });
 
   describe('normalizedBackfill', function () {
-    var oldUsesModernPerf;
+    var oldHasNow;
     var oldModernBoot;
     var oldOldBoot;
 
     beforeEach(function () {
-      oldUsesModernPerf = yerf().usesModernPerf;
+      oldHasNow = yerf().hasNow;
       oldModernBoot = yerf().modernBoot;
       oldOldBoot = yerf().oldBoot;
     });
 
     afterEach(function () {
-      yerf().usesModernPerf = oldUsesModernPerf;
+      yerf().hasNow = oldHasNow;
       yerf().modernBoot = oldModernBoot;
       yerf().oldBoot = oldOldBoot;
     });
 
     it('converts unix times to yerf times and does a backfill', function () {
-      yerf().usesModernPerf = true;
+      yerf().hasNow = true;
       yerf().modernBoot = 100;
       yerf().oldBoot = 1000000;
       mockGetTime(100, 200);

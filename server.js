@@ -62,6 +62,7 @@ serveDir('/lib/');
 serveDir('/examples/');
 serveDir('/tests/');
 serveDir('/node_modules/kivi/');
+serveDir('/node_modules/kivi/dependencies/js/');
 
 app.listen(PORT);
 
