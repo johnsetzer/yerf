@@ -171,6 +171,31 @@
     kivi.config.$ = $;
     yerf().config.viewerCssPath =  '../lib/waterfall_viewer.css';
     yerf().config.viewerJsPath =  '../lib/waterfall_viewer.js';
+    yerf().config.waterfallViewer = {
+      rules: [
+        {
+          pattern: /css/
+        , color: '35,90,220'
+        , colorStep: 20
+        , collapsed: true
+        }
+      , {
+          pattern: /js/
+        , color: '35,90,220'
+        , colorStep: 20
+        , collapsed: true
+        }
+      , {
+          pattern: /api/
+        , color: '150,20,200'
+        , colorStep: 20
+        }
+      , {
+          pattern: /partial/
+        , collapsed: true
+        }
+      ]
+    };
 
     // Testing yerf onError
     yerf().onError(new Error('This is a test error.  Please ignore it.'));
