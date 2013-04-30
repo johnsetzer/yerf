@@ -169,10 +169,10 @@
     kivi.config.postUrl = 'http://' + window.location.host + '/postUrl';
     kivi.enablePost([1000, 2000, 4000]);
     kivi.config.$ = $;
-    yerf().config.viewerCssPath =  '../lib/waterfall_viewer.css';
-    yerf().config.viewerJsPath =  '../lib/waterfall_viewer.js';
     yerf().config.waterfallViewer = {
-      rules: [
+      cssPath: '../lib/waterfall_viewer.css'
+    , jsPath: '../lib/waterfall_viewer.js'
+    , rules: [
         {
           pattern: /css/
         , color: '35,90,220'
