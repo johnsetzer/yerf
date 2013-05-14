@@ -224,22 +224,26 @@ Yerf won't send data about a sample or any of that samples children to `kivi` un
 
 # Configuring the Waterfall View
 You can change the output of yerf().render() by specifying some `rules`.  Yerf applies the first rule that matches a sample's key and will ignore the rest of the list of rules.
+
 - pattern => the regex to compare to the samples key
 - color => (optional) an RGB series of colors to render the key's background color
 - colorStep => (optional) The value added each RGB value as you the renderer goes a level deeper in the inheritance tree.
 - collapsed => (optional) Samples with children default expanded.  Render collapsed instead.
-yerf().config.waterfallViewer = {
-    cssPath: 'http://cdn.yoursite.com/stylesheets/waterfall_viewer.css'
-  , jsPath: 'http://cdn.yoursite.com/javascripts/waterfall_viewer.js'
-  , rules: [
-      {
-        pattern: /api/
-      , color: '35,90,220'
-      , colorStep: 20
-      , collapsed: true
-      }
-    ]
-  };
+
+
+        yerf().config.waterfallViewer = {
+            cssPath: 'http://cdn.yoursite.com/stylesheets/waterfall_viewer.css'
+          , jsPath: 'http://cdn.yoursite.com/javascripts/waterfall_viewer.js'
+          , rules: [
+            {
+              pattern: /api/
+            , color: '35,90,220'
+            , colorStep: 20
+            , collapsed: true
+            }
+          ]
+        };
+
 
 #Browser Compatibility
 yerf is tested in IE 7-10, latest Chrome, latest Firefox, and latests Safari
