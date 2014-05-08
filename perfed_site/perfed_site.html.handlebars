@@ -2,6 +2,8 @@
 <html>
   <head>
     <script type="text/javascript">
+      // Yerf implements getTime.
+      // Reimplementing getTime to measure Kivi and Yerf load time.
       var epoch = new Date().getTime();
       var getTime = function () {
         if (window.performance && window.performance.now) {

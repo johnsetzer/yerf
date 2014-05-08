@@ -17,9 +17,9 @@
     kivi.config.postUrl = 'http://' + window.location.host + '/postUrl';
     kivi.enablePost([1000, 2000, 4000]);
 
-    yerf().config = {
-      viewerCssPath: '../lib/waterfall_viewer.css'
-    , viewerJsPath: '../lib/waterfall_viewer.js'
+    yerf().config.waterfallViewer = {
+      cssPath: '../lib/waterfall_viewer.css'
+    , jsPath: '../lib/waterfall_viewer.js'
     };
 
     // You can start and stop an event to record how long it took
