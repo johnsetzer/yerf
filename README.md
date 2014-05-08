@@ -160,16 +160,17 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
     git clone git@github.com:johnsetzer/yerf.git
     cd yerf
     npm install
+    npm install jake -g
 
 #Run example
 
-    node server.js
+    jake server
     Open http://localhost:3000/perfed_site/perfed_site.html
     Open your browser console and run 'yerf().render();'
 
 #Run tests
 
-    node server.js
+    jake server
     http://localhost:3002/tests/test_suite.html
 
 #Run tests with testem
