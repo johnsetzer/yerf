@@ -126,16 +126,6 @@ describe('yerf()', function () {
       yerf().hasEntries = oldHasEntries;
     });
 
-    describe('when performance.webkitGetEntries() is present', function () {
-      it('returns an entry list', function () {
-        window.performance.webkitGetEntries = function () {};
-        var perfSpy = spyOn(window.performance, 'webkitGetEntries').andReturn(entries);
-
-        expect(yerf().getEntries()).toBe(entries);
-        expect(perfSpy).toHaveBeenCalled();
-      });
-    });
-
     describe('when performance.getEntries() is present', function () {
       it('returns an entry list', function () {
         window.performance.getEntries = function () {};
@@ -146,9 +136,10 @@ describe('yerf()', function () {
       });
     });
 
-    describe('when no entry method is present', function () {
+    describe('when performance.getEntries() is NOT present', function () {
       it('returns an empty list', function () {
         window.performance = {};
+        yerf().hasEntries = false;
 
         expect(yerf().getEntries()).toEqual([]);
       });
