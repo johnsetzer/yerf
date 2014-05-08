@@ -33,15 +33,15 @@ Accessing attributes
 The keys of samples are namespaced with periods.
 "parent.child" is assumed to be a component of "parent".
 
-Start events relative to a sample
+Start events relative to a sample.
 
     sample.start('child', 'child.childOfChild');
 
-Stop events relative to a sample
+Stop events relative to a sample.
 
     sample.stop('child', 'child.childOfChild');
 
-Find events child events relative to their parent
+Find events child events relative to their parent.
 
     yerf('parent').find('child1').start();
 
@@ -58,13 +58,13 @@ Automatically, stop parent when all of its dependencies(child1 and child2) are s
     yerf('parent.child1').stop();
     yerf('parent.child2').stop();   // parent is automatically stopped
 
-yerf automatically links parents and children into a tree
+yerf automatically links parents and children into a tree.  Be careful not to name an event after a yerf method like `start` or `stop`.
 
     yerf().start('parent').start('child1');
     yerf('parent').children.child1  // Same as yerf('parent.child1')
     yerf('parent.child1').parent    // Same as yerf('parent')
 
-Samples are event emitters
+Samples are event emitters.
 
     sample.on('start', function (sample) {});
     sample.on('stop', function (sample) {});
@@ -149,7 +149,7 @@ The example above demonstrates a few important principles.
 - Old browsers don't support `performance.*`.  This means that on new browsers the backfill operations will record the pageRequest time and expand the length of parent to include the pageRequest time.  Old browsers will skip this backfill and not include the pageRequest time.  So, on some browsers you can only record things that happen durring yerfStartToEnd.  You will want to avoid recording things that span the "yerfStart" boundary because that will make it hard to compare results of old browsers to new ones.
 - In IE9 `yerf().hasTiming` is true, but `yerf().hasNow` is false.  Its important to check for both of these because navigationStart would happen at a negative time in IE9 since it doesn't support performance.now().  `yerf` does not allow negative time and rounds the start time up to zero.  So, you can't measure performance.timing events in IE9 unless you want to distort your data.
 
-Render a waterfall view of all completed samples in the browser.  yerf.js does not include the render() logic.  When render() is called, yerf will download and execute the needed code on demand. `render()` requires that the Underscore object, `_`, be present on the page.
+Render a waterfall view of all completed samples in the browser.  yerf.js does not include the `render()` logic.  When `render()` is called, yerf will download and execute the needed code on demand. `render()` requires that the Underscore object, `_`, be present on the page.
 
     yerf().render()
 
@@ -208,7 +208,7 @@ Frequently, you will find that your data is not getting reported because a depen
     yerf('parent').waitingFor.child1 // false
     yerf('parent').waitingFor.child2 // true
 
-Samples will throw  an `Error` if you forget a required parameter. If you cause a runtime error, such as trying to start or stop a sample twice or stopping a sample that hasn't started, yerf will call onError().  By default, yerf logs the error to console, but you could copy and modify this statement to override the default behavior.  
+Samples will throw  an `Error` if you forget a required parameter. If you cause a runtime error, such as trying to start or stop a sample twice or stopping a sample that hasn't started, yerf will call `onError()`.  By default, yerf logs the error to console, but you could copy and modify this statement to override the default behavior.  
 
     yerf().Sample.prototype.onError = function(error) {
       console.log(error.message);
@@ -246,7 +246,7 @@ You can change the output of yerf().render() by specifying some `rules`.  Yerf a
 
 
 #Browser Compatibility
-yerf is tested in IE 7-10, latest Chrome, latest Firefox, and latests Safari
+yerf is tested in IE 7-10, latest Chrome, latest Firefox, and latests Safari.
 
 #License
 Yerf is licensed under the Apache Version 2.0 License.
