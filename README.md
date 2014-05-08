@@ -25,31 +25,32 @@ or use chaining
 Accessing attributes
 
     sample.key       // "key"
-    sample.delta     // 6072
-    sample.startedAt // Tue Feb 26 2013 01:54:39 GMT-0800 (PST)
-    sample.stoppedAt // Tue Feb 26 2013 01:54:45 GMT-0800 (PST)
-    sample.state     // "started"
+    sample.delta     // 0.007999995432328433
+    sample.startedAt // 7107.685000002675
+    sample.stoppedAt // 7107.692999998108
+    sample.state     // "stopped"
 
 The keys of samples are namespaced with periods.
 "parent.child" is assumed to be a component of "parent".
 
-Start events relative to a sample.
+Start events relative to the current sample.
 
+    var sample = yerf().create('parent');
     sample.start('child', 'child.childOfChild');
 
-Stop events relative to a sample.
+Stop event's relative to the current sample.
 
     sample.stop('child', 'child.childOfChild');
 
-Find events child events relative to their parent.
+Find child samples relative to the current sample.
 
-    yerf('parent').find('child1').start();
+    yerf('parent').find('child');
 
 Automatically, stop parent when all of its dependencies(child1 and child2) are stopped. Also record offset times of child1 and child2 relative to the start of parent.  Notice that when child starting is chained from the parent the paths are relative to the parent, but when the child is selected from the page as a whole, the paths are absolute:
 
     yerf().start('parent').waterfall('child1', 'child2').start('child1');
     yerf('parent.child1').stop();
-    yerf('parent.child2').start();
+    yerf('parent').start('child2');
     yerf('parent.child2').stop();   // parent is automatically stopped
 
 `waterfall()` just means "Automatically stop this sample when its children are done."  `start()` will automatically call `waterfall()`.  Assuming you wanted to start the children at the same time the parent starts, you could rewrite the above example as:
@@ -58,18 +59,19 @@ Automatically, stop parent when all of its dependencies(child1 and child2) are s
     yerf('parent.child1').stop();
     yerf('parent.child2').stop();   // parent is automatically stopped
 
-yerf automatically links parents and children into a tree.  Be careful not to name an event after a yerf method like `start` or `stop`.
+yerf automatically links parents and children into a tree.
 
-    yerf().start('parent').start('child1');
-    yerf('parent').children.child1  // Same as yerf('parent.child1')
-    yerf('parent.child1').parent    // Same as yerf('parent')
+    yerf().start('parent').start('child');
+    yerf('parent').children.child  // Same as yerf('parent.child')
+    yerf('parent.child').parent    // Same as yerf('parent')
 
-Samples are event emitters.
+Samples are event emitters. `start` and `stop` are fired automatically.
 
-    sample.on('start', function (sample) {});
-    sample.on('stop', function (sample) {});
-    sample.on('arbitrary_event', function (sample) {});
-    sample.trigger('arbitrary_event');
+    var sample = yerf().create('key');
+    sample.on('start', function (sample) { console.log('STARTED at ' + sample.startedAt); });
+    sample.on('stop', function (sample) { console.log('STOPPED at ' + sample.stoppedAt); });
+    sample.on('arbitrary_event', function (sample) { console.log('State at ARBITRARY_EVENT: ' + sample.state); });
+    sample.trigger('arbitrary_event').start().stop();
 
 #Yerf Selector
 Create a sample.
@@ -98,8 +100,8 @@ Clear all the data yerf has collected.
 
 Subscribe to and trigger events globally.
 
-    yerf().on('parent.child', 'start', function (sample) {});
-    yerf().trigger('parent.child', 'start', yerf('parent.child'));
+    yerf().on('parent.child', 'MY_EVENT', function (eventObj) { console.log('parent.child ' + eventObj.status); });
+    yerf().trigger('parent.child', 'MY_EVENT', { status: 'All Clear' });
 
 Get time relative to the yerf epoch. Yerf will use `performance.now()` if available, in which case the epoch is `navigationStart`.  If yerf has to use `new Date()` to get time, the epoch is relative to when yerf first loads.
 
@@ -115,7 +117,7 @@ Check the capabilities of your current browser
     yerf().hasTiming // performance.timing works
     yerf().hasEntries // performance.getEntries or performance.webkitGetEntires is available
 
-You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit it `backfillRequest()` will use the inner most matching group as your key.  There is also a `normalizedBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
+You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit the eventKey `backfillRequest()` will use the Regex's inner most matching group as your key.  There is also a `normalizedBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
 
     var parent = yerf().start('parent').start('child');
     var yerfStart = yerf().normTime(yerf().oldBoot);
@@ -147,7 +149,7 @@ You can backfill events that happen before yerf loads or edit values before they
 
 The example above demonstrates a few important principles.
 - Old browsers don't support `performance.*`.  This means that on new browsers the backfill operations will record the pageRequest time and expand the length of parent to include the pageRequest time.  Old browsers will skip this backfill and not include the pageRequest time.  So, on some browsers you can only record things that happen durring yerfStartToEnd.  You will want to avoid recording things that span the "yerfStart" boundary because that will make it hard to compare results of old browsers to new ones.
-- In IE9 `yerf().hasTiming` is true, but `yerf().hasNow` is false.  Its important to check for both of these because navigationStart would happen at a negative time in IE9 since it doesn't support performance.now().  `yerf` does not allow negative time and rounds the start time up to zero.  So, you can't measure performance.timing events in IE9 unless you want to distort your data.
+- In IE9 `yerf().hasTiming` is true, but `yerf().hasNow` is false.  Its important to check for both of these because `navigationStart` would happen at a negative time in IE9 since it doesn't support `performance.now()`.  `yerf` does not allow negative time and rounds the start time up to zero.  So, you can't measure `performance.timing` events in IE9 unless you want to distort your data.
 
 Render a waterfall view of all completed samples in the browser.  yerf.js does not include the `render()` logic.  When `render()` is called, yerf will download and execute the needed code on demand. `render()` requires that the Underscore object, `_`, be present on the page.
 
@@ -172,6 +174,7 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
 
 #Run tests with testem
 
+    npm install testem -g
     testem
 
 # Installing yerf in your app
@@ -219,8 +222,8 @@ Some of your measurements might be inside code that gets executed more than once
 Yerf won't send data about a sample or any of that samples children to `kivi` until the entire sample completes. Each yerf sample results in a `delta` and an `offset` being sent to `kivi`
 
     yerf().start('key').stop();
-    kivi._store['yerf.delta.key]; // 0
-    kivi._store['yerf.offset.key]; // 10
+    kivi._store['yerf.delta.key']; // 0
+    kivi._store['yerf.offset.key']; // 10
 
 # Configuring the Waterfall View
 You can change the output of yerf().render() by specifying some `rules`.  Yerf applies the first rule that matches a sample's key and will ignore the rest of the list of rules.
