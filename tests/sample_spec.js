@@ -124,13 +124,21 @@ describe('yerf().Sample', function () {
         mockGetTime(1);
         var sample = new (yerf().Sample)('test');
         sample.start();
-        expect(sample.startedAt).toEqual(1);
+        expect(sample.startedAt).toBe(1);
+      });
+
+      it('sets offset to startedAt on root nodes', function () {
+        mockGetTime(1);
+        var sample = new (yerf().Sample)('test');
+        sample.start();
+        expect(sample.startedAt).toBe(1);
+        expect(sample.offset).toBe(1);
       });
 
       it('changes state to started', function () {
         var sample = new (yerf().Sample)('test');
         sample.start();
-        expect(sample.state).toEqual('started');
+        expect(sample.state).toBe('started');
       });
 
       it('triggers start event', function () {
@@ -149,22 +157,25 @@ describe('yerf().Sample', function () {
       describe('when the sample has a parent', function () {
         it('sets offset from parent\'s started at', function () {
           mockGetTime(1, 3);
-          var sample = new (yerf().Sample)('test');
           var parent = new (yerf().Sample)('parent');
-          sample.parent = parent;
           parent.start();
-          sample.start();
+          parent.start('test');
+          var sample = yerf('parent.test');
           expect(sample.offset).toBe(2); // 3 - 1 = 2
         });
       });
 
       describe('when the sample is already started and is started again', function () {
-        it('calls onAlreadyStarted()', function () {
+        it('calls onError()', function () {
           var sample = new (yerf().Sample)('test');
           var onErrorSpy = expectOnError('Sample[test] has already started.');
+          var sub = jasmine.createSpy();
+          sample.on('start', sub);
+          
           sample.start();
-          expect(sample.start()).toBe(sample);
+          sample.start();
           expect(onErrorSpy).toHaveBeenCalled();
+          expect(sub.calls.length).toBe(1);
         });
       });
     });
@@ -173,34 +184,75 @@ describe('yerf().Sample', function () {
       it('starts children with the given names', function () {
         var sample = new (yerf().Sample)('test');
         sample.waterfall('dep1', 'dep2', 'dep3');
+
+        var dep1Sub = jasmine.createSpy();
+        yerf().on('test.dep1', 'start', dep1Sub);
+        var dep2Sub = jasmine.createSpy();
+        yerf().on('test.dep2', 'start', dep2Sub);
+        var dep3Sub = jasmine.createSpy();
+        yerf().on('test.dep3', 'start', dep3Sub);
+        
         sample.start('dep1', 'dep2');
         
         expect(yerf('test.dep1').state).toBe('started');
         expect(yerf('test.dep2').state).toBe('started');
+        expect(yerf('test.dep3')).toBe(undefined);
 
-        expect(sample.children['dep1']).toBe(yerf('test.dep1'));
-        expect(sample.children['dep2']).toBe(yerf('test.dep2'));
+        expect(sample.children.dep1).toBe(yerf('test.dep1'));
+        expect(sample.children.dep2).toBe(yerf('test.dep2'));
+        expect(sample.children.dep3).toBe(undefined);
+
+        expect(dep1Sub).toHaveBeenCalledWith(yerf('test.dep1'));
+        expect(dep2Sub).toHaveBeenCalledWith(yerf('test.dep2'));
+        expect(dep3Sub).not.toHaveBeenCalled();
       });
 
-      it('does not restart already started children', function () {
+      it('onErrors if you start an already started children', function () {
+        mockGetTime(1, 2, 3);
         var sample = new (yerf().Sample)('test');
-        sample.waterfall('dep1', 'dep2', 'dep3');
-        new (yerf().Sample)('test.dep1').start();
-        sample.start('dep2');
+
+        var dep1Sub = jasmine.createSpy();
+        yerf().on('test.dep1', 'start', dep1Sub);
+        var onErrorSpy = expectOnError('Sample[test.dep1] has already started.');
+
+        // Start once
+        sample.start('dep1');
+        var dep1 = yerf('test.dep1');
+        expect(dep1Sub).toHaveBeenCalledWith(dep1);
+        expect(onErrorSpy).not.toHaveBeenCalled();
+        
+        // Restart
+        sample.start('dep1');
         
         expect(yerf('test.dep1').state).toBe('started');
-        expect(yerf('test.dep2').state).toBe('started');
+        expect(dep1Sub.callCount).toBe(1);
 
-        expect(sample.children['dep1']).toBe(yerf('test.dep1'));
-        expect(sample.children['dep2']).toBe(yerf('test.dep2'));
+        expect(sample.children.dep1).toBe(dep1);
+        expect(dep1.parent).toBe(sample);
+        expect(dep1.startedAt).toBe(2);
+        expect(dep1.offset).toBe(1);
+        expect(onErrorSpy).toHaveBeenCalled();
       });
 
       it('starts and add events to the waterfall list if the event is not on the waterfall list', function () {
         var sample = new (yerf().Sample)('test');
         sample.waterfall('dep1', 'dep2');
+        sample.start('dep1', 'not_waiting_for');
 
-        expect(sample.start('dep1', 'not_waiting_for', 'dep2')).toBe(sample);
+        // Check starts
+        expect(yerf('test.dep1').state).toBe('started');
+        expect(yerf('test.dep2')).toBe(undefined);
         expect(yerf('test.not_waiting_for').state).toBe('started');
+
+        // Check waterfall list
+        expect(sample.waitingFor.dep1).toBe(true);
+        expect(sample.waitingFor.dep2).toBe(true);
+        expect(sample.waitingFor.not_waiting_for).toBe(true);
+      });
+
+      it('returns the Sample so methods can be chained', function () {
+        var sample = new (yerf().Sample)('test');
+        expect(sample.start('dep1', 'dep2')).toBe(sample);
       });
     });
   });
@@ -211,14 +263,14 @@ describe('yerf().Sample', function () {
         mockGetTime(1, 3);
         var sample = new (yerf().Sample)('test');
         sample.start().stop();
-        expect(sample.stoppedAt).toEqual(3);
-        expect(sample.delta).toEqual(2);
+        expect(sample.stoppedAt).toBe(3);
+        expect(sample.delta).toBe(2);
       });
 
       it('changes state to stopped', function () {
         var sample = new (yerf().Sample)('test');
         sample.start().stop();
-        expect(sample.state).toEqual('stopped');
+        expect(sample.state).toBe('stopped');
       });
 
       it('triggers stop event', function () {
@@ -229,13 +281,14 @@ describe('yerf().Sample', function () {
         expect(sub).toHaveBeenCalledWith(sample);
       });
 
-      it('passes delta to kivi.set()', function () {
+      it('passes delta and offset to kivi.set()', function () {
         mockGetTime(1, 3);
         var sample = new (yerf().Sample)('test');
         var kiviSpy =  spyOn(kivi, 'set');
         sample.start().stop();
-        expect(kiviSpy.calls.length).toBe(1);
+        expect(kiviSpy.calls.length).toBe(2);
         expect(kiviSpy).toHaveBeenCalledWith('yerf.delta.test', 2);
+        expect(kiviSpy).toHaveBeenCalledWith('yerf.offset.test', 1);
       });
 
       it('returns the Sample so methods can be chained', function () {
@@ -247,8 +300,9 @@ describe('yerf().Sample', function () {
         it('calls onError()', function () {
           var sample = new (yerf().Sample)('test');
           var onErrorSpy = expectOnError('Sample[test] has already stopped.');
-          sample.start().stop();
-          expect(sample.stop()).toBe(sample);
+          sample.start();
+          sample.stop();
+          sample.stop();
           expect(onErrorSpy).toHaveBeenCalled();
         });
       });
@@ -273,21 +327,16 @@ describe('yerf().Sample', function () {
         expect(yerf('test.dep1').state).toBe('stopped');
         expect(yerf('test.dep2').state).toBe('stopped');
 
-        expect(sample.children['dep1']).toBe(yerf('test.dep1'));
-        expect(sample.children['dep2']).toBe(yerf('test.dep2'));
+        expect(sample.children.dep1).toBe(yerf('test.dep1'));
+        expect(sample.children.dep2).toBe(yerf('test.dep2'));
       });
 
-      it('calls onError() if you try to stop an event that it is not a child', function () {
+      it('calls onError() if you try to stop an event that is not a child', function () {
         var sample = new (yerf().Sample)('test');
-        sample.waterfall('dep1', 'dep2', 'dep3');
+        sample.waterfall('dep1', 'dep2');
         sample.start('dep1');
 
-        var onErrorSpy = expectOnError('Cannot stop a child[not_waiting_for] that is not attached.');
-        expect(sample.stop('not_waiting_for')).toBe(sample);
-        expect(onErrorSpy).toHaveBeenCalled();
-
-        onErrorSpy.restore('onError');
-        onErrorSpy = expectOnError('Cannot stop a child[dep2] that is not attached.');
+        var onErrorSpy = expectOnError('Cannot stop a child[dep2] that is not attached.');
         expect(sample.stop('dep2')).toBe(sample);
         expect(onErrorSpy).toHaveBeenCalled();
       });
@@ -306,6 +355,19 @@ describe('yerf().Sample', function () {
         expect(onErrorSpy.calls[2].args[0].message).toBe('Sample[test] is a waterfall and cannot be manually stopped.');
       });
     });
+
+    it('reports rounded values to kivi when finished', function () {
+      mockGetTime(1.1, 10.2); // Not all browsers return integers for times
+      var kiviSpy =  spyOn(kivi, 'set');
+
+      var sample = new (yerf().Sample)('test');
+      sample.start().stop();
+
+      expect(kiviSpy.calls[0].args[0]).toBe('yerf.delta.test');
+      expect(kiviSpy.calls[0].args[1]).toBe(9);
+      expect(kiviSpy.calls[1].args[0]).toBe('yerf.offset.test');
+      expect(kiviSpy.calls[1].args[1]).toBe(1);
+    });
   });
 
   describe('waterfall()', function () {
@@ -316,6 +378,7 @@ describe('yerf().Sample', function () {
           var sample = new (yerf().Sample)('test');
           var onErrorSpy = expectOnError('Should not be called by test.');
           expect(sample.waterfall()).toBe(sample);
+          expect(sample.stop()).toBe(sample);
           expect(onErrorSpy).not.toHaveBeenCalled();
         });
       });
@@ -355,19 +418,6 @@ describe('yerf().Sample', function () {
       });
     });
 
-    it('sets its offset', function () {
-      var sample = new (yerf().Sample)('test');
-      sample.waterfall();
-      expect(sample.offset).toBe(0);
-    });
-
-    it('calling it again does not reset its offset', function () {
-      var sample = new (yerf().Sample)('test');
-      sample.offset = 10;
-      sample.waterfall();
-      expect(sample.offset).toBe(10);
-    });
-
     it('calling it again adds more dependencies', function () {
       var sample = new (yerf().Sample)('test');
 
@@ -379,13 +429,25 @@ describe('yerf().Sample', function () {
     });
 
     it('does not allow you to wait on the same event more than once', function () {
+      mockGetTime(1, 2, 3, 4, 5);
       var sample = new (yerf().Sample)('test');
+      var stopSpy = spyOn(sample, '_checkStop');
 
       sample.waterfall('dep1', 'repeat', 'repeat');
       expect(sample.waitingFor).toEqual({dep1: true, repeat: true});
       
       sample.waterfall('dep1');
       expect(sample.waitingFor).toEqual({dep1: true, repeat: true});
+
+      // Make sure _checkStop is only called once per dependency
+      sample.start('dep1');
+      sample.start('repeat');
+      yerf('test.dep1').stop();
+      yerf('test.repeat').stop();
+
+      expect(stopSpy.callCount).toBe(2);
+      expect(stopSpy).toHaveBeenCalledWith('dep1', 4);
+      expect(stopSpy).toHaveBeenCalledWith('repeat', 5);
     });
 
     describe('when it is called with args and is stopped', function () {
@@ -461,7 +523,7 @@ describe('yerf().Sample', function () {
       expect(kiviSpy.calls[0].args[0]).toBe('yerf.delta.test');
       expect(kiviSpy.calls[0].args[1]).toBe(49);
       expect(kiviSpy.calls[1].args[0]).toBe('yerf.offset.test');
-      expect(kiviSpy.calls[1].args[1]).toBe(0);
+      expect(kiviSpy.calls[1].args[1]).toBe(1);
 
       expect(kiviSpy.calls[2].args[0]).toBe('yerf.delta.test.dep1');
       expect(kiviSpy.calls[2].args[1]).toBe(10);
@@ -474,10 +536,10 @@ describe('yerf().Sample', function () {
       expect(kiviSpy.calls[5].args[1]).toBe(29);
     });
 
-    it('calls onError() if one of its dependencies is already started', function () {
+    it('calls onError() if one of its dependencies has already started', function () {
       var sample = new (yerf().Sample)('test');
       var dep1 = new (yerf().Sample)('test.dep1').start();
-      var onErrorSpy = expectOnError('Child[test.dep1] is already started.');
+      var onErrorSpy = expectOnError('Child[test.dep1] has already started.');
       
       expect(sample.waterfall('dep1', 'dep2')).toBe(sample);
       expect(onErrorSpy).toHaveBeenCalled();
@@ -493,7 +555,7 @@ describe('yerf().Sample', function () {
       var dep2dep1 = yerf('root.dep2.dep1').stop(); // 500 - 550
       var dep2dep2 = yerf('root.dep2.dep2').stop(); // 560 - 600
 
-      expect(root.offset).toBe(0);
+      expect(root.offset).toBe(1);
       expect(dep1.offset).toBe(99);
       expect(dep1dep1.offset).toBe(0);
       expect(dep1dep2.offset).toBe(50);
@@ -544,29 +606,29 @@ describe('yerf().Sample', function () {
       expect(grandParent.startedAt).toBe(50);
       expect(grandParent.stoppedAt).toBe(200);
       expect(grandParent.delta).toBe(150);
-      expect(grandParent.offset).toBe(0);
-    }
+      expect(grandParent.offset).toBe(50);
+    };
 
     var checkUncle = function () {
       expect(uncle.startedAt).toBe(100);
       expect(uncle.stoppedAt).toBe(105);
       expect(uncle.delta).toBe(5);
       expect(uncle.offset).toBe(50);
-    }
+    };
 
-    var checkParent= function () {
+    var checkParent = function () {
       expect(parent.startedAt).toBe(100);
       expect(parent.stoppedAt).toBe(200);
       expect(parent.delta).toBe(100);
       expect(parent.offset).toBe(50);
-    }
+    };
 
     var checkChild = function () {
       expect(child.startedAt).toBe(150);
       expect(child.stoppedAt).toBe(200);
       expect(child.delta).toBe(50);
       expect(child.offset).toBe(50);
-    }
+    };
 
     var setupCheck = function () {
       checkGrandParent();
@@ -579,7 +641,7 @@ describe('yerf().Sample', function () {
       mockGetTime(50, 100, 100, 105, 150, 200);
 
       grandParent = new (yerf().Sample)('grandParent'); // 50 - 200
-      grandParent.waterfall('parent', 'uncle'); 
+      grandParent.waterfall('parent', 'uncle');
 
       uncle = grandParent.start('uncle').find('uncle'); // 100 - 105
 
@@ -782,7 +844,7 @@ describe('yerf().Sample', function () {
         expect(grandParent.startedAt).toBe(50);
         expect(grandParent.stoppedAt).toBe(250);
         expect(grandParent.delta).toBe(200);
-        expect(grandParent.offset).toBe(0);
+        expect(grandParent.offset).toBe(50);
 
         // Parent's end time is updated
         expect(parent.startedAt).toBe(100);
@@ -814,7 +876,7 @@ describe('yerf().Sample', function () {
         expect(grandParent.startedAt).toBe(1);
         expect(grandParent.stoppedAt).toBe(250);
         expect(grandParent.delta).toBe(249);
-        expect(grandParent.offset).toBe(0);
+        expect(grandParent.offset).toBe(1);
 
         // Parent's times are updated
         expect(parent.startedAt).toBe(1);
@@ -928,7 +990,7 @@ describe('yerf().Sample', function () {
         });
 
         oldHasEntries = yerf().hasEntries;
-         yerf().hasEntries = true;
+        yerf().hasEntries = true;
       });
 
       afterEach(function () {
@@ -936,7 +998,7 @@ describe('yerf().Sample', function () {
       });
 
       describe('when a key is provided', function () {
-        it('searches GetEntries for a matching request to backfill and uses provided key', function () {
+        it('searches getEntries() for a matching request to backfill and uses provided key', function () {
           sample.start().stop();
           var result = sample.backfillRequest(undefined, 'backfill', /action/);
           expect(result).toBe(sample);
@@ -954,7 +1016,7 @@ describe('yerf().Sample', function () {
       });
 
       describe('when the parentKey and the key are provided', function () {
-        it('searches GetEntries for a matching request to backfill and uses provided key', function () {
+        it('searches getEntries() for a matching request to backfill and uses provided key', function () {
           sample.start().stop();
           var result = sample.backfillRequest('parentKey', 'backfill', /action/);
           expect(result).toBe(sample);
@@ -979,7 +1041,7 @@ describe('yerf().Sample', function () {
       });
 
       describe('when a key is not provided', function () {
-        it('searches GetEntries for a matching request to backfill and uses inner most matching group as key', function () {
+        it('searches getEntries() for a matching request to backfill and uses inner most matching group as key', function () {
           sample.start().stop();
           var result = sample.backfillRequest(undefined, undefined, /(assets.*(action)).json/);
           expect(result).toBe(sample);
@@ -997,23 +1059,22 @@ describe('yerf().Sample', function () {
       });
     });
 
-    describe('when usesModernPerf is false', function () {
+    describe('when hasEntries is false', function () {
 
       beforeEach(function () {
-        oldUsesModernPerf = yerf().usesModernPerf;
+        oldHasEntries = yerf().hasEntries;
         oldModernBoot = yerf().modernBoot;
         oldOldBoot = yerf().oldBoot;
       });
 
       afterEach(function () {
-        yerf().usesModernPerf = oldUsesModernPerf;
+        yerf().hasEntries = oldHasEntries;
         yerf().modernBoot = oldModernBoot;
         yerf().oldBoot = oldOldBoot;
       });
 
       it('does not backfill', function () {
         mockGetTime(100, 200);
-        yerf().usesModernPerf = false;
         
         var sample = new (yerf().Sample)('sample');
         sample.children = {};
@@ -1110,7 +1171,7 @@ describe('yerf().Sample', function () {
       
       sample.beforeReport = function () {
         beforeReportCalled = true;
-      }
+      };
 
       var beforeReportSpy = spyOn(sample, 'beforeReport').andCallThrough();
       var reportToKiviSpy = spyOn(sample, '_reportToKivi').andCallFake(function () {
