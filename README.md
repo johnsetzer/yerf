@@ -214,8 +214,8 @@ Frequently, you will find that your data is not getting reported because a depen
 
 Samples will throw  an `Error` if you forget a required parameter. If you cause a runtime error, such as trying to start or stop a sample twice or stopping a sample that hasn't started, yerf will call `onError()`.  By default, yerf logs the error to console, but you could copy and modify this statement to override the default behavior.  
 
-    yerf().Sample.prototype.onError = function(error) {
-      console.log(error.message);
+    yerf().onError = function(error) {
+      kivi.log(error.message);
     };
 
 Some of your measurements might be inside code that gets executed more than once or in different places under different circumstances.  yerf will simply ignore the second start or stop of a sample with a given key.  If you want to measure the same code running in different places because you think it will take a different amount of time, you will need to figure out how to pass a different key to `start()` and `stop()` depending on the circumstances.
