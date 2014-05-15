@@ -148,19 +148,19 @@ describe('yerf()', function () {
 
   describe('Tests that change the epoch', function () {
     var oldHasNow;
-    var oldModernBoot;
-    var oldOldBoot;
+    var oldYerfEpoch;
+    var oldUnixEpoch;
 
     beforeEach(function () {
       oldHasNow = yerf().hasNow;
-      oldModernBoot = yerf().modernBoot;
-      oldOldBoot = yerf().oldBoot;
+      oldYerfEpoch = yerf().yerfEpoch;
+      oldUnixEpoch = yerf().unixEpoch;
     });
 
     afterEach(function () {
       yerf().hasNow = oldHasNow;
-      yerf().modernBoot = oldModernBoot;
-      yerf().oldBoot = oldOldBoot;
+      yerf().yerfEpoch = oldYerfEpoch;
+      yerf().unixEpoch = oldUnixEpoch;
     });
 
     describe('getTime()', function () {
@@ -177,7 +177,7 @@ describe('yerf()', function () {
       describe('when using old perf', function () {
         it('returns the time since navigation start', function () {
           yerf().hasNow = false;
-          yerf().oldBoot = 100;
+          yerf().unixEpoch = 100;
           mockDate(300);
             
           expect(yerf().getTime()).toBe(200);
@@ -186,38 +186,38 @@ describe('yerf()', function () {
       });
     });
 
-    describe('normTime()', function () {
+    describe('unixToYerf()', function () {
       describe('when using modern perf', function () {
         it('converts unix time to yerf time', function () {
           yerf().hasNow = true;
-          yerf().modernBoot = 100;
-          yerf().oldBoot = 1000000;
+          yerf().yerfEpoch = 100;
+          yerf().unixEpoch = 1000000;
 
-          expect(yerf().normTime(1000200)).toBe(300);
+          expect(yerf().unixToYerf(1000200)).toBe(300);
         });
 
         it('forces negative times to zero', function () {
           yerf().hasNow = true;
-          yerf().modernBoot = 100;
-          yerf().oldBoot = 1000000;
+          yerf().yerfEpoch = 100;
+          yerf().unixEpoch = 1000000;
 
-          expect(yerf().normTime(1)).toBe(0);
+          expect(yerf().unixToYerf(1)).toBe(0);
         });
       });
 
       describe('when using old perf', function () {
         it('converts unix time to yerf time', function () {
           yerf().hasNow = false;
-          yerf().oldBoot = 1000000;
+          yerf().unixEpoch = 1000000;
           
-          expect(yerf().normTime(1000200)).toBe(200);
+          expect(yerf().unixToYerf(1000200)).toBe(200);
         });
 
         it('forces negative times to zero', function () {
           yerf().hasNow = false;
-          yerf().oldBoot = 1000000;
+          yerf().unixEpoch = 1000000;
           
-          expect(yerf().normTime(1)).toBe(0);
+          expect(yerf().unixToYerf(1)).toBe(0);
         });
       });
     });

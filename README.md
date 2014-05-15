@@ -109,7 +109,7 @@ Get time relative to the yerf epoch. Yerf will use `performance.now()` if availa
 
 Convert unix time into yerf time.
 
-    yerf().normTime(new Date());
+    yerf().unixToYerf(new Date());
 
 Check the capabilities of your current browser
 
@@ -117,10 +117,10 @@ Check the capabilities of your current browser
     yerf().hasTiming // performance.timing works
     yerf().hasEntries // performance.getEntries or performance.webkitGetEntires is available
 
-You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit the eventKey `backfillRequest()` will use the Regex's inner most matching group as your key.  There is also a `normalizedBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
+You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit the eventKey `backfillRequest()` will use the Regex's inner most matching group as your key.  There is also a `unixBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
 
     var parent = yerf().start('parent').start('child');
-    var yerfStart = yerf().normTime(yerf().oldBoot);
+    var yerfStart = yerf().unixToYerf(yerf().oldBoot);
     parent.beforeReport = function () {
       parent.backfill(undefined, 'yerfStartToEnd', yerfStart, parent.stoppedAt);
 
@@ -128,12 +128,12 @@ You can backfill events that happen before yerf loads or edit values before they
         var navStart = window.performance.timing.navigationStart;
 
         parent.backfill(undefined, 'navigationStartToYerfStart'
-          , yerf().normTime(navStart), yerfStart);
+          , yerf().unixToYerf(navStart), yerfStart);
 
         parent.backfill(undefined, 'pageRequestEndToYerfStart'
-          , yerf().normTime(window.performance.timing.responseEnd), yerfStart);    
+          , yerf().unixToYerf(window.performance.timing.responseEnd), yerfStart);
 
-        parent.normalizedBackfill(undefined, 'pageRequest'
+        parent.unixBackfill(undefined, 'pageRequest'
           , window.performance.timing.requestStart
           , window.performance.timing.responseEnd);
       }

@@ -471,14 +471,14 @@ describe('yerf().Sample', function () {
 
       beforeEach(function () {
         oldHasEntries = yerf().hasEntries;
-        oldModernBoot = yerf().modernBoot;
-        oldOldBoot = yerf().oldBoot;
+        oldYerfEpoch = yerf().yerfEpoch;
+        oldUnixEpoch = yerf().unixEpoch;
       });
 
       afterEach(function () {
         yerf().hasEntries = oldHasEntries;
-        yerf().modernBoot = oldModernBoot;
-        yerf().oldBoot = oldOldBoot;
+        yerf().yerfEpoch = oldYerfEpoch;
+        yerf().unixEpoch = oldUnixEpoch;
       });
 
       it('does not backfill', function () {
@@ -504,27 +504,27 @@ describe('yerf().Sample', function () {
     });
   });
 
-  describe('normalizedBackfill', function () {
+  describe('unixBackfill', function () {
     var oldHasNow;
-    var oldModernBoot;
-    var oldOldBoot;
+    var oldYerfEpoch;
+    var oldUnixEpoch;
 
     beforeEach(function () {
       oldHasNow = yerf().hasNow;
-      oldModernBoot = yerf().modernBoot;
-      oldOldBoot = yerf().oldBoot;
+      oldYerfEpoch = yerf().yerfEpoch;
+      oldUnixEpoch = yerf().unixEpoch;
     });
 
     afterEach(function () {
       yerf().hasNow = oldHasNow;
-      yerf().modernBoot = oldModernBoot;
-      yerf().oldBoot = oldOldBoot;
+      yerf().yerfEpoch = oldYerfEpoch;
+      yerf().unixEpoch = oldUnixEpoch;
     });
 
     it('converts unix times to yerf times and does a backfill', function () {
       yerf().hasNow = true;
-      yerf().modernBoot = 100;
-      yerf().oldBoot = 1000000;
+      yerf().yerfEpoch = 100;
+      yerf().unixEpoch = 1000000;
       mockGetTime(100, 200);
 
       var sample = new (yerf().Sample)('sample');
@@ -532,7 +532,7 @@ describe('yerf().Sample', function () {
 
       var backfillSpy = spyOn(sample, 'backfill').andCallThrough();
       
-      var result = sample.normalizedBackfill('parent', 'backfill', 1000500, 1000600);
+      var result = sample.unixBackfill('parent', 'backfill', 1000500, 1000600);
       expect(result).toBe(sample);
 
       // it delegates the heavy lifting to backfill()
@@ -560,14 +560,14 @@ describe('yerf().Sample', function () {
       var sample = new (yerf().Sample)('sample');
       sample.start().stop();
 
-      expect(function () { sample.normalizedBackfill(undefined, 'backfill', undefined, 190); }).toThrow('You must specify a startedAt for this Sample[backfill].');
+      expect(function () { sample.unixBackfill(undefined, 'backfill', undefined, 190); }).toThrow('You must specify a startedAt for this Sample[backfill].');
     });
 
     it('throws an exception when stoppedAt is omitted', function () {
       var sample = new (yerf().Sample)('sample');
       sample.start().stop();
 
-      expect(function () { sample.normalizedBackfill(undefined, 'backfill', 110, undefined); }).toThrow('You must specify a stoppedAt for this Sample[backfill].');
+      expect(function () { sample.unixBackfill(undefined, 'backfill', 110, undefined); }).toThrow('You must specify a stoppedAt for this Sample[backfill].');
     });
   });
 });

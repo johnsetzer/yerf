@@ -46,16 +46,16 @@
           var navStart = window.performance.timing.navigationStart;
 
           feedSample.backfill(undefined, 'navigationStartToYerfStart'
-            , yerf().normTime(navStart), feedSampleStart);
+            , yerf().unixToYerf(navStart), feedSampleStart);
 
           feedSample.backfill(undefined, 'pageRequestEndToYerfStart'
-            , yerf().normTime(window.performance.timing.responseEnd), feedSampleStart);
+            , yerf().unixToYerf(window.performance.timing.responseEnd), feedSampleStart);
 
-          feedSample.normalizedBackfill(undefined, 'navigationStartToPageRequest'
+          feedSample.unixBackfill(undefined, 'navigationStartToPageRequest'
             , navStart
             , window.performance.timing.requestStart);
           
-          feedSample.normalizedBackfill(undefined, 'pageRequest'
+          feedSample.unixBackfill(undefined, 'pageRequest'
             , window.performance.timing.requestStart
             , window.performance.timing.responseEnd);
         }
