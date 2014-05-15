@@ -7,7 +7,7 @@ yerf is a Javascript client side library designed to measure the runtime of prog
 - Namespaced events
 - Every sample is a key/value pair that can easily be injected into any tool.
 - A Sample with a given key can only be recorded once to ease logistics and to keep one client from skewing results by reporting an event many times.
-- Total missuses of the yerf, such as forgetting a required parameter, will throw an exception; but subtle runtime errors, like stopping a sample twice, will call the onError() callback, which defaults to logging to the browser console.
+- Total missuses of the yerf, such as forgetting a required parameter, will throw an exception; but subtle runtime errors, like stopping a sample twice, will call the `onError()` callback, which defaults to logging to the browser console.
 - Uses `performance.now()` if available. Otherwise, it gracefully falls back on `new Date()`.
 - Allows backfilling of previous events so yerf loading doesn't have to block CSS and other assets in your document head.
 
@@ -36,15 +36,15 @@ The keys of samples are namespaced with periods.
 Start events relative to the current sample.
 
     var sample = yerf().create('parent');
-    sample.start('child', 'child.childOfChild');
+    sample.start('child1', 'child2');
 
 Stop event's relative to the current sample.
 
-    sample.stop('child', 'child.childOfChild');
+    sample.stop('child1', 'child2');
 
 Find child samples relative to the current sample.
 
-    yerf('parent').find('child');
+    yerf('parent').find('child1');
 
 Automatically, stop parent when all of its dependencies(child1 and child2) are stopped. Also record offset times of child1 and child2 relative to the start of parent.  Notice that when child starting is chained from the parent the paths are relative to the parent, but when the child is selected from the page as a whole, the paths are absolute:
 
@@ -55,7 +55,7 @@ Automatically, stop parent when all of its dependencies(child1 and child2) are s
 
 `waterfall()` just means "Automatically stop this sample when its children are done."  `start()` will automatically call `waterfall()`.  Assuming you wanted to start the children at the same time the parent starts, you could rewrite the above example as:
 
-    yerf().start('parent').start('child1', 'child2');
+    yerf().create('parent').start('child1', 'child2');
     yerf('parent.child1').stop();
     yerf('parent.child2').stop();   // parent is automatically stopped
 
@@ -103,24 +103,34 @@ Subscribe to and trigger events globally.
     yerf().on('parent.child', 'MY_EVENT', function (eventObj) { console.log('parent.child ' + eventObj.status); });
     yerf().trigger('parent.child', 'MY_EVENT', { status: 'All Clear' });
 
-Get time relative to the yerf epoch. Yerf will use `performance.now()` if available, in which case the epoch is `navigationStart`.  If yerf has to use `new Date()` to get time, the epoch is relative to when yerf first loads.
+##Timing
+Return milliseoncds since the page first loaded according to yerf. Yerf will use `performance.now()`, if available, in which case the epoch is `navigationStart`.  If yerf has to use `new Date()` to get time, the epoch is relative to when yerf first loads.
 
     yerf().getTime();
 
 Convert unix time into yerf time.
 
     yerf().unixToYerf(new Date());
+    
+Get milliseconds between `navigationStart` and yerf start.
+
+    yerf().yerfEpoch
+    
+Get milliseconds between unix epoch(1970) and yerf start.
+
+    yerf().unixEpoch
 
 Check the capabilities of your current browser
 
     yerf().hasNow // performance.now() works
     yerf().hasTiming // performance.timing works
-    yerf().hasEntries // performance.getEntries or performance.webkitGetEntires is available
+    yerf().hasEntries // performance.getEntries is available
 
+##Backfilling
 You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit the eventKey `backfillRequest()` will use the Regex's inner most matching group as your key.  There is also a `unixBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
 
     var parent = yerf().start('parent').start('child');
-    var yerfStart = yerf().unixToYerf(yerf().oldBoot);
+    var yerfStart = yerf().unixToYerf(yerf().unixEpoch);
     parent.beforeReport = function () {
       parent.backfill(undefined, 'yerfStartToEnd', yerfStart, parent.stoppedAt);
 
@@ -151,7 +161,8 @@ The example above demonstrates a few important principles.
 - Old browsers don't support `performance.*`.  This means that on new browsers the backfill operations will record the pageRequest time and expand the length of parent to include the pageRequest time.  Old browsers will skip this backfill and not include the pageRequest time.  So, on some browsers you can only record things that happen durring yerfStartToEnd.  You will want to avoid recording things that span the "yerfStart" boundary because that will make it hard to compare results of old browsers to new ones.
 - In IE9 `yerf().hasTiming` is true, but `yerf().hasNow` is false.  Its important to check for both of these because `navigationStart` would happen at a negative time in IE9 since it doesn't support `performance.now()`.  `yerf` does not allow negative time and rounds the start time up to zero.  So, you can't measure `performance.timing` events in IE9 unless you want to distort your data.
 
-Render a waterfall view of all completed samples in the browser.  yerf.js does not include the `render()` logic.  When `render()` is called, yerf will download and execute the needed code on demand. `render()` requires that the Underscore object, `_`, be present on the page.
+##Rendering
+Render a waterfall view of all completed samples in the browser.  `yerf-delayables.js` does not include the `render()` logic.  When `render()` is called, yerf will download and execute the needed code on demand. `render()` requires that the Underscore object, `_`, be present on the page.
 
     yerf().render()
 
@@ -180,8 +191,8 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
 
 # Installing yerf in your app
 
-1. yerf outsources posting data to a remote server to the [kivi](https://github.com/johnsetzer/kivi) library.  You need to include both the `kivi.min.js` followed the `yerf.min.js` source in your HTML page or, better yet, put them in a linked Javascript file.
-1. Start and stop at least one sample
+1. yerf outsources posting data to a remote server to the [kivi](https://github.com/johnsetzer/kivi) library.  You need to include both the `kivi.min.js` followed the `yerf.min.js` source in your HTML page or, better yet, put them in a linked Javascript file.  kivi and yerf should be before any Javascript actions you want to measure OR you need to record some timestamps and use the `backfill()` method. `yerf.min.js` contains all of the core functionality required to start Samples, stop Samples, and report them to kivi. `yerf-delayables.min.js` is an optional file that contains things that don't need to be loaded before other Javascript.  Currently it contains all of the `backfillX()` methods and `render()`.
+1. Start and stop at least one sample.
 
         yerf().start('sample').stop();
 1. Configure these `kivi` properties.  This step and every step after it can be deferred until your entire page is loaded.
@@ -192,7 +203,7 @@ Render a waterfall view of all completed samples in the browser.  yerf.js does n
 
         kivi.enablePost([1000, 2000, 4000]);
 1. Older browsers, IE7, don't support `JSON.stringify()`. If you want your site to work in these browsers see the [kivi.getToJSON() documentation](https://github.com/johnsetzer/kivi#browser-compatibility).
-1. To get the waterfall viewer to work you need to host the waterfall_viewer.css and waterfall_viewer.js files somewhere and tell yerf where to find them.
+1. To get the waterfall viewer to work you need to host the `waterfall_viewer.css` and `waterfall_viewer.js` files somewhere and tell yerf where to find them.
 
         yerf().config.waterfallViewer = {
           cssPath: 'http://cdn.yoursite.com/stylesheets/waterfall_viewer.css'
