@@ -6,10 +6,13 @@ yerf is a Javascript client side library designed to measure the runtime of prog
 - jQuery like syntax for ease of use
 - Namespaced events
 - Every sample is a key/value pair that can easily be injected into any tool.
-- A Sample with a given key can only be recorded once to ease logistics and to keep one client from skewing results by reporting an event many times.
 - Total missuses of the yerf, such as forgetting a required parameter, will throw an exception; but subtle runtime errors, like stopping a sample twice, will call the `onError()` callback, which defaults to logging to the browser console.
-- Uses `performance.now()` if available. Otherwise, it gracefully falls back on `new Date()`.
+- If yerf loads in an old browser that does not support all of yerfs's `performance.*` dependencies, calls to yerf will result in noops that will not cause errors but will also not result in any data collection.
 - Allows backfilling of previous events so yerf loading doesn't have to block CSS and other assets in your document head.
+
+#Version History
+The last commit for version 0.2.0 was eaae0a1a9e0d97a06391ebad89b9d17a4a39d40f
+All versions after this dropped the complicated support for old browsers. Old browsers now result in `noops`
 
 #Samples
 Samples consist of a key, a delta, a start time, an end time, and a state.  Most sample methods return themselves so they can be chained together.
@@ -104,7 +107,7 @@ Subscribe to and trigger events globally.
     yerf().trigger('parent.child', 'MY_EVENT', { status: 'All Clear' });
 
 ##Timing
-Return milliseoncds since the page first loaded according to yerf. Yerf will use `performance.now()`, if available, in which case the epoch is `navigationStart`.  If yerf has to use `new Date()` to get time, the epoch is relative to when yerf first loads.
+Return milliseoncds since the page first loaded according to yerf, in other words `performance.now()`.
 
     yerf().getTime();
 
@@ -120,33 +123,25 @@ Get milliseconds between unix epoch(1970) and yerf start.
 
     yerf().unixEpoch
 
-Check the capabilities of your current browser
-
-    yerf().hasNow // performance.now() works
-    yerf().hasTiming // performance.timing works
-    yerf().hasEntries // performance.getEntries is available
-
 ##Backfilling
-You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported to `kivi`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit the eventKey `backfillRequest()` will use the Regex's inner most matching group as your key.  There is also a `unixBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
+You can backfill events that happen before yerf loads or edit values before they are reported with `beforeReport()`, which is called right between the time when an event's state is changed to `stopped` and when the event is reported with `yerf.report(sample)`.  This is useful for measuring page asset download times without blocking them by loading yerf.  Note that `backfill(parentKey, key, startedAt, stoppedAt)` can only be called inside of `beforeReport()`.  `backfillRequest(parentKey, optionalKey, urlRegex)` will go through `performance.getEntries()` and do a backfill with any entries that match the regex you supplied.  The event key is optional.  If you omit the eventKey `backfillRequest()` will use the Regex's inner most matching group as your key.  There is also a `unixBackfill()` method that is the exact same as `backfill()` except that it takes unix times instead of times relative to page load.
 
     var parent = yerf().start('parent').start('child');
     var yerfStart = yerf().unixToYerf(yerf().unixEpoch);
     parent.beforeReport = function () {
       parent.backfill(undefined, 'yerfStartToEnd', yerfStart, parent.stoppedAt);
 
-      if (yerf().hasTiming && yerf().hasNow) {
-        var navStart = window.performance.timing.navigationStart;
+      var navStart = window.performance.timing.navigationStart;
 
-        parent.backfill(undefined, 'navigationStartToYerfStart'
-          , yerf().unixToYerf(navStart), yerfStart);
+      parent.backfill(undefined, 'navigationStartToYerfStart'
+        , yerf().unixToYerf(navStart), yerfStart);
 
-        parent.backfill(undefined, 'pageRequestEndToYerfStart'
-          , yerf().unixToYerf(window.performance.timing.responseEnd), yerfStart);
+      parent.backfill(undefined, 'pageRequestEndToYerfStart'
+        , yerf().unixToYerf(window.performance.timing.responseEnd), yerfStart);
 
-        parent.unixBackfill(undefined, 'pageRequest'
-          , window.performance.timing.requestStart
-          , window.performance.timing.responseEnd);
-      }
+      parent.unixBackfill(undefined, 'pageRequest'
+        , window.performance.timing.requestStart
+        , window.performance.timing.responseEnd);
 
       parent.backfillRequest('js', undefined, /.*\/javascripts\/([\w\/]*).js/);
       parent.backfillRequest('css', undefined, /.*\/stylesheets\/([\w\/]*).css/);
@@ -156,38 +151,6 @@ You can backfill events that happen before yerf loads or edit values before they
 
     };
     yerf('parent.child').stop();
-
-The example above demonstrates a few important principles.
-- Old browsers don't support `performance.*`.  This means that on new browsers the backfill operations will record the pageRequest time and expand the length of parent to include the pageRequest time.  Old browsers will skip this backfill and not include the pageRequest time.  So, on some browsers you can only record things that happen durring yerfStartToEnd.  You will want to avoid recording things that span the "yerfStart" boundary because that will make it hard to compare results of old browsers to new ones.
-- In IE9 `yerf().hasTiming` is true, but `yerf().hasNow` is false.  Its important to check for both of these because `navigationStart` would happen at a negative time in IE9 since it doesn't support `performance.now()`.  `yerf` does not allow negative time and rounds the start time up to zero.  So, you can't measure `performance.timing` events in IE9 unless you want to distort your data.
-
-##Rendering
-Render a waterfall view of all completed samples in the browser.  `yerf-delayables.js` does not include the `render()` logic.  When `render()` is called, yerf will download and execute the needed code on demand. `render()` requires that the Underscore object, `_`, be present on the page.
-
-    yerf().render()
-
-#Setup
-
-    git clone git@github.com:johnsetzer/yerf.git
-    cd yerf
-    npm install
-    npm install jake -g
-
-#Run example
-
-    jake server
-    Open http://localhost:3000/perfed_site/perfed_site.html
-    Open your browser console and run 'yerf().render();'
-
-#Run tests
-
-    jake server
-    http://localhost:3002/tests/test_suite.html
-
-#Run tests with testem
-
-    npm install testem -g
-    testem
 
 # Installing yerf in your app
 
@@ -202,7 +165,6 @@ Render a waterfall view of all completed samples in the browser.  `yerf-delayabl
 1. Automatically, post data to a server after 1000ms, 2000ms after that, and 4000ms after that.
 
         kivi.enablePost([1000, 2000, 4000]);
-1. Older browsers, IE7, don't support `JSON.stringify()`. If you want your site to work in these browsers see the [kivi.getToJSON() documentation](https://github.com/johnsetzer/kivi#browser-compatibility).
 1. To get the waterfall viewer to work you need to host the `waterfall_viewer.css` and `waterfall_viewer.js` files somewhere and tell yerf where to find them.
 
         yerf().config.waterfallViewer = {
@@ -210,11 +172,16 @@ Render a waterfall view of all completed samples in the browser.  `yerf-delayabl
         , jsPath: 'http://cdn.yoursite.com/javascripts/waterfall_viewer.js'
         };
 
+##Rendering Waterfall Diagrams In The Browser
+Render a waterfall view of all completed samples in the browser.  `yerf-delayables.js` does not include the `render()` logic.  When `render()` is called, yerf will download and execute the needed code on demand.
+
+    yerf().render()
+
 #Debugging
 
 List all samples and their current state
 
-    kivi._.each(yerf().all(), function(d) { console.log(d.key, d.delta, d.state); });
+    yerf().all().forEach(function(d) { console.log(d.key, d.delta, d.state); });
 
 Frequently, you will find that your data is not getting reported because a dependency is not yet satisfied.  Checking the waiting for property is very useful.
 
@@ -261,7 +228,34 @@ You can change the output of yerf().render() by specifying some `rules`.  Yerf a
 
 
 #Browser Compatibility
-yerf is tested in IE 7-10, latest Chrome, latest Firefox, and latests Safari.
+yerf works on any browser that supports `performance.now()`, `performance.timing.*`, `performance.getEntries()`, and `Array.prototype.forEach()`. This is effectively IE >= 10 and semi-recent Chrome and Firefox.
+
+Check if your current browser has all the capabilities need to run yerf without a noop.
+
+    yerf().enabled
+
+#Development Setup
+
+    git clone git@github.com:johnsetzer/yerf.git
+    cd yerf
+    npm install
+    npm install jake -g
+
+#Run example
+
+    jake server
+    Open http://localhost:3000/perfed_site/perfed_site.html
+    Open your browser console and run 'yerf().render();'
+
+#Run tests
+
+    jake server
+    http://localhost:3002/tests/test_suite.html
+
+#Run tests with testem
+
+    npm install testem -g
+    testem
 
 #License
 Yerf is licensed under the Apache Version 2.0 License.
